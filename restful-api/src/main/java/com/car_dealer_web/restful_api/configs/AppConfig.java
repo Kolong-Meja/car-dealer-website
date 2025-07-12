@@ -2,7 +2,6 @@ package com.car_dealer_web.restful_api.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -11,8 +10,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.car_dealer_web.restful_api.interfaces.IUser;
 
@@ -22,21 +19,6 @@ public class AppConfig {
 
   public AppConfig(IUser iUser) {
     this.iUser = iUser;
-  }
-
-  @Bean
-  public WebMvcConfigurer corsConfigurer() {
-    return new WebMvcConfigurer() {
-      @Override
-      public void addCorsMappings(@NonNull CorsRegistry corsRegistry) {
-        corsRegistry.addMapping("/**")
-            .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000",
-                "http://127.0.0.1:3000")
-            .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE")
-            .allowedHeaders("*")
-            .allowCredentials(true);
-      }
-    };
   }
 
   @Bean

@@ -9,12 +9,12 @@ create table users (
   account_status varchar(20) null default 'active',
   active_status varchar(20) null default 'offline',
   avatar_url text null,
-  password_change_at timestampz,
-  last_login_at timestampz,
+  password_change_at timestamptz,
+  last_login_at timestamptz,
   last_edited_by varchar(100) null,
-  created_at timestampz default current_timestamp,
-  updated_at timestampz default current_timestamp,
-  deleted_at timestampz
+  created_at timestamptz default current_timestamp,
+  updated_at timestamptz default current_timestamp,
+  deleted_at timestamptz
 );
 
 comment on column users.bio is 'User biography.';

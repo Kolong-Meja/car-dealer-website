@@ -1,7 +1,6 @@
 package com.car_dealer_web.restful_api.interfaces;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
 
 import com.car_dealer_web.restful_api.payloads.requests.auth.LoginRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RefreshAuthTokenRequest;
@@ -10,7 +9,6 @@ import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-@Component
 public interface IAuth {
   ResponseEntity<ApiResponse> register(RegisterRequest request);
 

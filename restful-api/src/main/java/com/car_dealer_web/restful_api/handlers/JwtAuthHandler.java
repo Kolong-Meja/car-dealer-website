@@ -29,11 +29,11 @@ import io.jsonwebtoken.Jwts;
 
 @Component
 public class JwtAuthHandler {
-  @Value("${jwt.public.key}")
-  private final RSAPublicKey publicKey;
-
   @Value("${jwt.private.key}")
-  private final RSAPrivateKey privateKey;
+  private RSAPublicKey publicKey;
+
+  @Value("${jwt.public.key}")
+  private RSAPrivateKey privateKey;
 
   @Value("${jwt.expiration}")
   private int jwtExpirationMs;
@@ -42,17 +42,6 @@ public class JwtAuthHandler {
   private int refreshTokenExpirationMs;
 
   private static final Logger LOG = LoggerFactory.getLogger(JwtAuthHandler.class);
-
-  public JwtAuthHandler(
-      RSAPrivateKey privateKey,
-      RSAPublicKey publicKey,
-      int jwtExpirationMs,
-      int refreshTokenExpirationMs) {
-    this.privateKey = privateKey;
-    this.publicKey = publicKey;
-    this.jwtExpirationMs = jwtExpirationMs;
-    this.refreshTokenExpirationMs = refreshTokenExpirationMs;
-  }
 
   private String createJwt(User user) throws InvalidKeyException, UnknownHostException {
     List<String> userRoles = user.getRoles()
