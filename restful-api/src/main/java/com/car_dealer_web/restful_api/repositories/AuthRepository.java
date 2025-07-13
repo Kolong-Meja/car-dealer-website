@@ -74,7 +74,7 @@ public class AuthRepository implements IAuth {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> register(RegisterRequest request) {
+  public ResponseEntity<ApiResponse<Object>> register(RegisterRequest request) {
     LOG.info("Registering new user...");
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -128,7 +128,7 @@ public class AuthRepository implements IAuth {
     // SETUP THE API (JSON) RESPONSE.
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true, "Successfully registering new user.",
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully registering new user.",
         now.format(formatter),
         resource);
 
@@ -138,7 +138,7 @@ public class AuthRepository implements IAuth {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> login(LoginRequest request) {
+  public ResponseEntity<ApiResponse<Object>> login(LoginRequest request) {
     LOG.info(String.format("Doing login as %s", request.email()));
 
     authenticationManager.authenticate(
@@ -159,7 +159,7 @@ public class AuthRepository implements IAuth {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Login is success. Welcome back %s", request.email()),
         now.format(formatter),
         resource);
@@ -170,7 +170,7 @@ public class AuthRepository implements IAuth {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> me(HttpServletRequest request) {
+  public ResponseEntity<ApiResponse<Object>> me(HttpServletRequest request) {
     LOG.info("Checking user data by passing JWT.");
 
     final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -212,7 +212,7 @@ public class AuthRepository implements IAuth {
     resource.put("token_expired_at", tokenExpiredAt);
 
     // SETUP THE API (JSON) RESPONSE.
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true, "Successfully fetch personal data.",
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully fetch personal data.",
         now.format(formatter),
         resource);
 
@@ -222,7 +222,7 @@ public class AuthRepository implements IAuth {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> refresh(HttpServletRequest httpServletRequest,
+  public ResponseEntity<ApiResponse<Object>> refresh(HttpServletRequest httpServletRequest,
       RefreshAuthTokenRequest refreshAuthTokenRequest) {
     LOG.info("Refreshing auth token...");
 
@@ -254,7 +254,7 @@ public class AuthRepository implements IAuth {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true, "Successfully refresh auth token.",
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully refresh auth token.",
         now.format(formatter), resource);
 
     LOG.info(response.message());

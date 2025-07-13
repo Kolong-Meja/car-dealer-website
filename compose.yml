@@ -36,6 +36,27 @@ services:
     networks:
       - car-dealer-website-networks
 
+  cache:
+    image: redis:alpine
+    container_name: "cache"
+    restart: always
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: >
+      sh -c "redis-server /usr/local/etc/redis/redis.conf --requirepass $$REDIS_PASSWORD"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./cache/redis-data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - car-dealer-website-networks
+
   restful-api:
     image: restful-api:latest
     container_name: "restful-api"
@@ -45,6 +66,7 @@ services:
     restart: no
     depends_on:
       - postgresql
+      - cache
     networks:
       car-dealer-website-networks:
         aliases:

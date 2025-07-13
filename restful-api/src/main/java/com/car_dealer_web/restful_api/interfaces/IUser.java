@@ -4,27 +4,30 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 
+import com.car_dealer_web.restful_api.dtos.joins.UserJoinDTO;
 import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
 import com.car_dealer_web.restful_api.payloads.requests.users.UpdateUserRequest;
 import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
+import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface IUser {
-  ResponseEntity<ApiResponse> findAll(SearchRequest searchRequest, PaginationRequest paginationRequest);
+  ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest);
 
-  ResponseEntity<ApiResponse> findOne(String id);
+  ResponseEntity<ApiResponse<UserJoinDTO>> findOne(String id);
 
-  ResponseEntity<ApiResponse> update(String id, UpdateUserRequest updateUserRequest,
+  ResponseEntity<ApiResponse<Object>> update(String id, UpdateUserRequest updateUserRequest,
       HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse> restore(String id);
+  ResponseEntity<ApiResponse<Object>> restore(String id);
 
-  ResponseEntity<ApiResponse> delete(String id);
+  ResponseEntity<ApiResponse<Object>> delete(String id);
 
-  ResponseEntity<ApiResponse> forceDelete(String id);
+  ResponseEntity<ApiResponse<Object>> forceDelete(String id);
 
   // FOR AUTH
   Optional<User> findOneByEmail(String email);

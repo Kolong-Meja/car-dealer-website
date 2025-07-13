@@ -10,6 +10,9 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -79,7 +82,9 @@ public class RoleRepository implements IRole {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> findAll(SearchRequest searchRequest, PaginationRequest paginationRequest) {
+  @Cacheable(value = "roles_cache")
+  public ResponseEntity<ApiResponse<PaginationResponse<RoleJoinDTO>>> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest) {
     LOG.info("Fetching all role entity resources...");
 
     try {
@@ -183,7 +188,7 @@ public class RoleRepository implements IRole {
 
       var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
       var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      ApiResponse response = new ApiResponse(
+      ApiResponse<PaginationResponse<RoleJoinDTO>> response = new ApiResponse<>(
           HttpStatus.OK.value(),
           true,
           "Succesfully fetch roles.",
@@ -201,7 +206,8 @@ public class RoleRepository implements IRole {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> findOne(String id) {
+  @Cacheable(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(String id) {
     LOG.info(String.format("Fetching role entity with ID %s resource...", id));
 
     try {
@@ -242,11 +248,11 @@ public class RoleRepository implements IRole {
 
       // CONVERT INTO DTO.
       TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-      var resource = RoleJoinDTO.fromTuple(typedQuery.getSingleResult());
+      RoleJoinDTO resource = RoleJoinDTO.fromTuple(typedQuery.getSingleResult());
 
       var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
       var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+      ApiResponse<RoleJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
           String.format("Successfully fetch role with ID %s", id),
           now.format(formatter),
           resource);
@@ -263,7 +269,8 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> save(CreateRoleRequest request) {
+  @CachePut(value = "roles_cache", key = "#result.resource.id")
+  public ResponseEntity<ApiResponse<Role>> save(CreateRoleRequest request) {
     LOG.info("Creating new role...");
 
     Role role = new Role();
@@ -277,7 +284,7 @@ public class RoleRepository implements IRole {
     // SETUP THE API (JSON) RESPONSE.
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true, "Successfully add new role.",
+    ApiResponse<Role> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully add new role.",
         now.format(formatter),
         role);
 
@@ -288,7 +295,8 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> update(String id, UpdateRoleRequest updateRoleRequest,
+  @CacheEvict(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> update(String id, UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Updating role entity with ID %s...", id));
 
@@ -333,7 +341,7 @@ public class RoleRepository implements IRole {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully update role entity with ID %s.", id),
         now.format(formatter), new HashMap<>());
 
@@ -344,7 +352,8 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> restore(String id) {
+  @CacheEvict(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> restore(String id) {
     LOG.info(String.format("Restoring role entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -368,7 +377,7 @@ public class RoleRepository implements IRole {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully restore role entity with ID %s", id),
         now.format(formatter), new HashMap<>());
 
@@ -379,7 +388,8 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> delete(String id) {
+  @CacheEvict(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> delete(String id) {
     LOG.info(String.format("Soft deleting role entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -401,7 +411,7 @@ public class RoleRepository implements IRole {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully soft delete role with ID %s", id),
         now.format(formatter), new HashMap<>());
 
@@ -412,7 +422,8 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> forceDelete(String id) {
+  @CacheEvict(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> forceDelete(String id) {
     LOG.info(String.format("Force deleting role entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -433,7 +444,7 @@ public class RoleRepository implements IRole {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully force delete role entity with ID %s", id),
         now.format(formatter), new HashMap<>());
 

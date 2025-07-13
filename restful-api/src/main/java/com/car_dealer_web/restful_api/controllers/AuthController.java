@@ -26,22 +26,23 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<ApiResponse> login(@Valid @RequestBody(required = true) LoginRequest loginRequest) {
+  public ResponseEntity<ApiResponse<Object>> login(@Valid @RequestBody(required = true) LoginRequest loginRequest) {
     return iAuth.login(loginRequest);
   }
 
   @PostMapping("/register")
-  public ResponseEntity<ApiResponse> register(@Valid @RequestBody(required = true) RegisterRequest registerRequest) {
+  public ResponseEntity<ApiResponse<Object>> register(
+      @Valid @RequestBody(required = true) RegisterRequest registerRequest) {
     return iAuth.register(registerRequest);
   }
 
   @GetMapping("/me")
-  public ResponseEntity<ApiResponse> me(HttpServletRequest httpServletRequest) {
+  public ResponseEntity<ApiResponse<Object>> me(HttpServletRequest httpServletRequest) {
     return iAuth.me(httpServletRequest);
   }
 
   @PostMapping("/refresh")
-  public ResponseEntity<ApiResponse> refresh(HttpServletRequest httpServletRequest,
+  public ResponseEntity<ApiResponse<Object>> refresh(HttpServletRequest httpServletRequest,
       @Valid @RequestBody(required = true) RefreshAuthTokenRequest refreshAuthTokenRequest) {
     return iAuth.refresh(httpServletRequest, refreshAuthTokenRequest);
   }

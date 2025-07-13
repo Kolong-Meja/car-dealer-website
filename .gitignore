@@ -1,5 +1,7 @@
 .vscode/
 .idea/
+.db/
+.cache/
 
 .env
 .env.local

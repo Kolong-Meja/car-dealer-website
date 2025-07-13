@@ -74,7 +74,8 @@ public class UserRepository implements IUser {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> findAll(SearchRequest searchRequest, PaginationRequest paginationRequest) {
+  public ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest) {
     LOG.info("Fetching all user entity resources...");
 
     try {
@@ -179,7 +180,7 @@ public class UserRepository implements IUser {
 
       var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
       var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      ApiResponse response = new ApiResponse(
+      ApiResponse<PaginationResponse<UserJoinDTO>> response = new ApiResponse<>(
           HttpStatus.OK.value(),
           true,
           "Succesfully fetch users.",
@@ -197,7 +198,7 @@ public class UserRepository implements IUser {
   }
 
   @Override
-  public ResponseEntity<ApiResponse> findOne(String id) {
+  public ResponseEntity<ApiResponse<UserJoinDTO>> findOne(String id) {
     LOG.info(String.format("Fetching user entity with ID %s resource...", id));
 
     try {
@@ -246,7 +247,7 @@ public class UserRepository implements IUser {
 
       var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
       var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-      ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+      ApiResponse<UserJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
           String.format("Successfully fetch user with ID %s", id),
           now.format(formatter),
           resource);
@@ -263,7 +264,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> update(String id, UpdateUserRequest updateUserRequest,
+  public ResponseEntity<ApiResponse<Object>> update(String id, UpdateUserRequest updateUserRequest,
       HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Updating user entity with ID %s...", id));
 
@@ -309,7 +310,7 @@ public class UserRepository implements IUser {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully update user entity with ID %s.", id),
         now.format(formatter), new HashMap<>());
 
@@ -320,7 +321,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> restore(String id) {
+  public ResponseEntity<ApiResponse<Object>> restore(String id) {
     LOG.info(String.format("Restoring user entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -344,7 +345,7 @@ public class UserRepository implements IUser {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully restore user entity with ID %s", id),
         now.format(formatter), new HashMap<>());
 
@@ -355,7 +356,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> delete(String id) {
+  public ResponseEntity<ApiResponse<Object>> delete(String id) {
     LOG.info(String.format("Soft deleting user entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -377,7 +378,7 @@ public class UserRepository implements IUser {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully soft delete user with ID %s", id),
         now.format(formatter), new HashMap<>());
 
@@ -388,7 +389,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse> forceDelete(String id) {
+  public ResponseEntity<ApiResponse<Object>> forceDelete(String id) {
     LOG.info(String.format("Force deleting user entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -409,7 +410,7 @@ public class UserRepository implements IUser {
 
     var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
     var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    ApiResponse response = new ApiResponse(HttpStatus.OK.value(), true,
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully force delete user entity with ID %s", id),
         now.format(formatter), new HashMap<>());
 

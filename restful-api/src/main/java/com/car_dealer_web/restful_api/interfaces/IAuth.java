@@ -10,12 +10,12 @@ import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface IAuth {
-  ResponseEntity<ApiResponse> register(RegisterRequest request);
+  ResponseEntity<ApiResponse<Object>> register(RegisterRequest request);
 
-  ResponseEntity<ApiResponse> login(LoginRequest request);
+  ResponseEntity<ApiResponse<Object>> login(LoginRequest request);
 
-  ResponseEntity<ApiResponse> me(HttpServletRequest request);
+  ResponseEntity<ApiResponse<Object>> me(HttpServletRequest request);
 
-  ResponseEntity<ApiResponse> refresh(HttpServletRequest httpServletRequest,
+  ResponseEntity<ApiResponse<Object>> refresh(HttpServletRequest httpServletRequest,
       RefreshAuthTokenRequest refreshAuthTokenRequest);
 }
