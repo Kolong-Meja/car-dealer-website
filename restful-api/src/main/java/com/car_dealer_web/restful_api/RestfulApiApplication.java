@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = "com.car_dealer_web.restful_api.repositories")
+@ComponentScan(basePackages = "com.car_dealer_web.restful_api")
 @EntityScan(basePackages = "com.car_dealer_web.restful_api.models")
 public class RestfulApiApplication {
 

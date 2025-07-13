@@ -30,10 +30,10 @@ import io.jsonwebtoken.Jwts;
 @Component
 public class JwtAuthHandler {
   @Value("${jwt.private.key}")
-  private RSAPublicKey publicKey;
+  private RSAPrivateKey privateKey;
 
   @Value("${jwt.public.key}")
-  private RSAPrivateKey privateKey;
+  private RSAPublicKey publicKey;
 
   @Value("${jwt.expiration}")
   private int jwtExpirationMs;

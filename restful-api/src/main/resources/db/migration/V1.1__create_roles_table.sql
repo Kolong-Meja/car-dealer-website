@@ -1,5 +1,5 @@
 create table roles (
-  id varchar(15) primary key not null,
+  id varchar(36) primary key not null,
   name varchar(50) unique not null,
   description text null,
   status varchar(20) null default 'active',

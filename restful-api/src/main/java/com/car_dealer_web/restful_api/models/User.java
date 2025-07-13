@@ -14,12 +14,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.car_dealer_web.restful_api.annotations.Cuid;
+import com.car_dealer_web.restful_api.annotations.UUIDv7;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
@@ -36,14 +37,15 @@ import jakarta.persistence.ManyToMany;
     @Index(name = "fullname_idx", columnList = "fullname"),
     @Index(name = "email_idx", columnList = "email"),
     @Index(name = "phone_number_idx", columnList = "phone_number"),
-    @Index(name = "status_idx", columnList = "status")
+    @Index(name = "account_status_idx", columnList = "account_status")
 })
 public class User implements UserDetails {
   @Id
-  @Cuid
-  @Size(max = 15)
+  @UUIDv7
+  @GeneratedValue(generator = "uuid-v7")
+  @Size(max = 36)
   @NotBlank(message = "id cannot be blank.")
-  @Column(name = "id", length = 15, nullable = false)
+  @Column(name = "id", length = 36, nullable = false)
   private String id;
 
   @Size(max = 100)

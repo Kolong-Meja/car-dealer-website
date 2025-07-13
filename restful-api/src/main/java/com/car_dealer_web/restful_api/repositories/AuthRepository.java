@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -48,23 +49,26 @@ import jakarta.transaction.Transactional;
 
 @Repository
 public class AuthRepository implements IAuth {
+  @Autowired
+  private PasswordEncoder passwordEncoder;
+
+  @Autowired
+  private AuthenticationManager authenticationManager;
+
   private final EntityManager entityManager;
-  private final PasswordEncoder passwordEncoder;
+
   private final JwtAuthHandler jwtAuthHandler;
-  private final AuthenticationManager authenticationManager;
+
   private final IUser iUser;
+
   private final static Logger LOG = LoggerFactory.getLogger(AuthRepository.class);
 
   public AuthRepository(
       EntityManager entityManager,
-      PasswordEncoder passwordEncoder,
       JwtAuthHandler jwtAuthHandler,
-      AuthenticationManager authenticationManager,
       IUser iUser) {
     this.entityManager = entityManager;
-    this.passwordEncoder = passwordEncoder;
     this.jwtAuthHandler = jwtAuthHandler;
-    this.authenticationManager = authenticationManager;
     this.iUser = iUser;
   }
 

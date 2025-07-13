@@ -1,6 +1,6 @@
 create table user_roles (
-  user_id varchar(15) not null,
-  role_id varchar(15) not null,
+  user_id varchar(36) not null,
+  role_id varchar(36) not null,
   
   constraint pk_user_roles primary key(user_id, role_id),
   constraint fk_user_id foreign key (user_id) references users(id) on delete cascade on update cascade,
