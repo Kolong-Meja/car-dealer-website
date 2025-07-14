@@ -10,16 +10,16 @@ public record UserJoinDTO(
     String fullname,
     String bio,
     String email,
-    String phoneNumber,
+    String phone_number,
     String address,
-    String accountStatus,
-    String activeStatus,
-    String avatarUrl,
-    LocalDateTime lastLoginAt,
-    String lastEditedBy,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
-    LocalDateTime deletedAt,
+    String account_status,
+    String active_status,
+    String avatar_url,
+    LocalDateTime last_login_at,
+    String last_edited_by,
+    LocalDateTime created_at,
+    LocalDateTime updated_at,
+    LocalDateTime deleted_at,
     String roleId,
     String roleName,
     String roleDescription,
@@ -29,16 +29,16 @@ public record UserJoinDTO(
       String fullname,
       String bio,
       String email,
-      String phoneNumber,
+      String phone_number,
       String address,
-      String accountStatus,
-      String activeStatus,
-      String avatarUrl,
-      LocalDateTime lastLoginAt,
-      String lastEditedBy,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt,
-      LocalDateTime deletedAt,
+      String account_status,
+      String active_status,
+      String avatar_url,
+      LocalDateTime last_login_at,
+      String last_edited_by,
+      LocalDateTime created_at,
+      LocalDateTime updated_at,
+      LocalDateTime deleted_at,
       String roleId,
       String roleName,
       String roleDescription,
@@ -47,16 +47,16 @@ public record UserJoinDTO(
     this.fullname = Objects.requireNonNull(fullname, "fullname cannot be null.");
     this.bio = bio;
     this.email = Objects.requireNonNull(email, "email cannot be null.");
-    this.phoneNumber = Objects.requireNonNull(phoneNumber, "phoneNumber cannot be null.");
+    this.phone_number = Objects.requireNonNull(phone_number, "phone_number cannot be null.");
     this.address = address;
-    this.accountStatus = Objects.requireNonNull(accountStatus, "account status cannot be null");
-    this.activeStatus = Objects.requireNonNull(activeStatus, "active status cannot be null");
-    this.avatarUrl = avatarUrl;
-    this.lastLoginAt = lastLoginAt;
-    this.lastEditedBy = lastEditedBy;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.deletedAt = deletedAt;
+    this.account_status = Objects.requireNonNull(account_status, "account status cannot be null");
+    this.active_status = Objects.requireNonNull(active_status, "active status cannot be null");
+    this.avatar_url = avatar_url;
+    this.last_login_at = last_login_at;
+    this.last_edited_by = last_edited_by;
+    this.created_at = created_at;
+    this.updated_at = updated_at;
+    this.deleted_at = deleted_at;
     this.roleId = Objects.requireNonNull(roleId, "role id cannot be null.");
     this.roleName = Objects.requireNonNull(roleName, "role name cannot be null.");
     this.roleDescription = roleDescription;

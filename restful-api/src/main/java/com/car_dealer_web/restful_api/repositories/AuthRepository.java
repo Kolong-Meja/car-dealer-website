@@ -104,13 +104,13 @@ public class AuthRepository implements IAuth {
     User user = new User();
     user.setFullname(registerRequest.fullname());
     user.setBio(registerRequest.bio());
-    user.setPhoneNumber(registerRequest.phoneNumber());
+    user.setPhoneNumber(registerRequest.phone_number());
     user.setEmail(registerRequest.email());
     user.setPassword(passwordEncoder.encode(registerRequest.password()));
     user.setAddress(registerRequest.address());
     user.setAccountStatus(UserAccountStatus.ACTIVE.toString().toLowerCase());
     user.setActiveStatus(UserActiveStatus.OFFLINE.toString().toLowerCase());
-    user.setAvatarUrl(registerRequest.avatarUrl());
+    user.setAvatarUrl(registerRequest.avatar_url());
     user.setRoles(defaultRoles);
 
     entityManager.persist(user);

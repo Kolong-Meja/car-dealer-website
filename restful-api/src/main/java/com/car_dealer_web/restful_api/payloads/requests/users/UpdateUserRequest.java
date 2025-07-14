@@ -11,10 +11,10 @@ public record UpdateUserRequest(
     String fullname,
     String bio,
     String email,
-    String phoneNumber,
+    String phone_number,
     String address,
-    String avatarUrl,
-    String lastEditedBy) {
+    String avatar_url,
+    String last_edited_by) {
   public UpdateUserRequest(
       @Size(max = 100) @NotBlank(message = "fullname cannot be blank.") String fullname,
 
@@ -22,19 +22,19 @@ public record UpdateUserRequest(
 
       @Size(max = 100) @Email(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "email is not valid.") @NotBlank(message = "email cannot be blank.") String email,
 
-      @Size(max = 16) @Pattern(regexp = "^\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$", message = "phone number is not valid.") @NotBlank(message = "phone number cannot be blank.") String phoneNumber,
+      @Size(max = 16) @Pattern(regexp = "^\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$", message = "phone number is not valid.") @NotBlank(message = "phone number cannot be blank.") String phone_number,
 
       @Size(min = 50, max = 250) @NotBlank(message = "address cannot be blank.") String address,
 
-      @Pattern(regexp = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$", message = "Avatar url is not valid.") String avatarUrl,
+      @Pattern(regexp = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$", message = "Avatar url is not valid.") String avatar_url,
 
-      @Size(max = 100) String lastEditedBy) {
+      @Size(max = 100) String last_edited_by) {
     this.fullname = Objects.requireNonNull(fullname, "fullname cannot be null.");
     this.bio = bio;
     this.email = Objects.requireNonNull(email, "email cannot be null.");
-    this.phoneNumber = Objects.requireNonNull(phoneNumber, "phoneNumber cannot be null.");
+    this.phone_number = Objects.requireNonNull(phone_number, "phone_number cannot be null.");
     this.address = Objects.requireNonNull(address, "address cannot be null.");
-    this.avatarUrl = avatarUrl;
-    this.lastEditedBy = lastEditedBy;
+    this.avatar_url = avatar_url;
+    this.last_edited_by = last_edited_by;
   }
 }

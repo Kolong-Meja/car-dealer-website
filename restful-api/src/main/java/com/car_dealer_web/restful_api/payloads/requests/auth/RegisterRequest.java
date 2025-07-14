@@ -12,11 +12,11 @@ public record RegisterRequest(
     String bio,
     String email,
     String password,
-    String phoneNumber,
+    String phone_number,
     String address,
-    String accountStatus,
-    String activeStatus,
-    String avatarUrl) {
+    String account_status,
+    String active_status,
+    String avatar_url) {
   public RegisterRequest(
       @Size(max = 100) @NotBlank(message = "fullname cannot be blank.") String fullname,
 
@@ -26,23 +26,23 @@ public record RegisterRequest(
 
       @Size(min = 8, max = 50) @Pattern(regexp = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$", message = "password is not valid.") @NotBlank(message = "password cannot be blank.") String password,
 
-      @Size(max = 16) @Pattern(regexp = "^\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$", message = "phone number is not valid.") @NotBlank(message = "phone number cannot be blank.") String phoneNumber,
+      @Size(max = 16) @Pattern(regexp = "^\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$", message = "phone number is not valid.") @NotBlank(message = "phone number cannot be blank.") String phone_number,
 
       @Size(min = 50, max = 250) @NotBlank(message = "address cannot be blank.") String address,
 
-      @Size(max = 20) String accountStatus,
+      @Size(max = 20) String account_status,
 
-      @Size(max = 20) String activeStatus,
+      @Size(max = 20) String active_status,
 
-      @Pattern(regexp = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$", message = "Avatar url is not valid.") String avatarUrl) {
+      @Pattern(regexp = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$", message = "Avatar url is not valid.") String avatar_url) {
     this.fullname = Objects.requireNonNull(fullname, "fullname cannot be null.");
     this.bio = Objects.requireNonNull(bio, "bio cannot be null.");
     this.email = Objects.requireNonNull(email, "email cannot be null.");
     this.password = Objects.requireNonNull(password, "password cannot be null.");
-    this.phoneNumber = Objects.requireNonNull(phoneNumber, "phone number cannot be null.");
+    this.phone_number = Objects.requireNonNull(phone_number, "phone number cannot be null.");
     this.address = Objects.requireNonNull(address, "address cannot be null.");
-    this.accountStatus = accountStatus;
-    this.activeStatus = activeStatus;
-    this.avatarUrl = avatarUrl;
+    this.account_status = account_status;
+    this.active_status = active_status;
+    this.avatar_url = avatar_url;
   }
 }

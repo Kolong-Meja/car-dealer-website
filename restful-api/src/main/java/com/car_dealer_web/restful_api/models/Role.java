@@ -51,16 +51,16 @@ public class Role {
 
   @Size(max = 100)
   @Column(name = "last_edited_by", length = 100, nullable = true)
-  private String lastEditedBy;
+  private String last_edited_by;
 
   @CreationTimestamp
-  private LocalDateTime createdAt;
+  private LocalDateTime created_at;
 
   @UpdateTimestamp
-  private LocalDateTime updatedAt;
+  private LocalDateTime updated_at;
 
   @Column(name = "deleted_at")
-  private LocalDateTime deletedAt;
+  private LocalDateTime deleted_at;
 
   @ManyToMany(fetch = FetchType.LAZY, cascade = {
       CascadeType.PERSIST,
@@ -76,18 +76,18 @@ public class Role {
       String name,
       String description,
       String status,
-      String lastEditedBy,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt,
-      LocalDateTime deletedAt) {
+      String last_edited_by,
+      LocalDateTime created_at,
+      LocalDateTime updated_at,
+      LocalDateTime deleted_at) {
     this.id = Objects.requireNonNull(id, "id cannot be null.");
     this.name = Objects.requireNonNull(name, "name cannot be null.");
     this.description = description;
     this.status = status;
-    this.lastEditedBy = lastEditedBy;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.deletedAt = deletedAt;
+    this.last_edited_by = last_edited_by;
+    this.created_at = created_at;
+    this.updated_at = updated_at;
+    this.deleted_at = deleted_at;
   }
 
   // GETTERS
@@ -108,19 +108,19 @@ public class Role {
   }
 
   public String getLastEditedBy() {
-    return lastEditedBy;
+    return last_edited_by;
   }
 
   public LocalDateTime getCreatedAt() {
-    return createdAt;
+    return created_at;
   }
 
   public LocalDateTime getUpdatedAt() {
-    return updatedAt;
+    return updated_at;
   }
 
   public LocalDateTime getDeletedAt() {
-    return deletedAt;
+    return deleted_at;
   }
 
   public Set<User> getUsers() {
@@ -145,19 +145,19 @@ public class Role {
   }
 
   public void setLastEditedBy(String value) {
-    this.lastEditedBy = value;
+    this.last_edited_by = value;
   }
 
   public void setCreatedAt(LocalDateTime value) {
-    this.createdAt = value;
+    this.created_at = value;
   }
 
   public void setUpdatedAt(LocalDateTime value) {
-    this.updatedAt = value;
+    this.updated_at = value;
   }
 
   public void setDeletedAt(LocalDateTime value) {
-    this.deletedAt = value;
+    this.deleted_at = value;
   }
 
   public void setUsers(Set<User> values) {
@@ -176,10 +176,10 @@ public class Role {
         && Objects.equals(name, role.name)
         && Objects.equals(description, role.description)
         && Objects.equals(status, role.status)
-        && Objects.equals(lastEditedBy, role.lastEditedBy)
-        && Objects.equals(createdAt, role.createdAt)
-        && Objects.equals(updatedAt, role.updatedAt)
-        && Objects.equals(deletedAt, role.deletedAt);
+        && Objects.equals(last_edited_by, role.last_edited_by)
+        && Objects.equals(created_at, role.created_at)
+        && Objects.equals(updated_at, role.updated_at)
+        && Objects.equals(deleted_at, role.deleted_at);
   }
 
   @Override
@@ -189,10 +189,10 @@ public class Role {
         name,
         description,
         status,
-        lastEditedBy,
-        createdAt,
-        updatedAt,
-        deletedAt);
+        last_edited_by,
+        created_at,
+        updated_at,
+        deleted_at);
   }
 
   @Override
@@ -202,10 +202,10 @@ public class Role {
         ", name=" + name +
         ", description=" + description +
         ", status=" + status +
-        ", lastEditedBy=" + lastEditedBy +
-        ", createdAt=" + createdAt +
-        ", updatedAt=" + updatedAt +
-        ", deletedAt=" + deletedAt +
+        ", last_edited_by=" + last_edited_by +
+        ", created_at=" + created_at +
+        ", updated_at=" + updated_at +
+        ", deleted_at=" + deleted_at +
         '}';
   }
 }

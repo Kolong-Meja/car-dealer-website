@@ -12,27 +12,27 @@ public record RoleDTO(
     String name,
     String description,
     String status,
-    String lastEditedBy,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt,
-    LocalDateTime deletedAt) {
+    String last_edited_by,
+    LocalDateTime created_at,
+    LocalDateTime updated_at,
+    LocalDateTime deleted_at) {
   public RoleDTO(
       String id,
       String name,
       String description,
       String status,
-      String lastEditedBy,
-      LocalDateTime createdAt,
-      LocalDateTime updatedAt,
-      LocalDateTime deletedAt) {
+      String last_edited_by,
+      LocalDateTime created_at,
+      LocalDateTime updated_at,
+      LocalDateTime deleted_at) {
     this.id = Objects.requireNonNull(id, "id cannot be null.");
     this.name = Objects.requireNonNull(name, "name cannot be null.");
     this.description = description;
     this.status = status;
-    this.lastEditedBy = lastEditedBy;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.deletedAt = deletedAt;
+    this.last_edited_by = last_edited_by;
+    this.created_at = created_at;
+    this.updated_at = updated_at;
+    this.deleted_at = deleted_at;
   }
 
   public static final RoleDTO fromObject(Role role) {
