@@ -430,6 +430,8 @@ public class UserRepository implements IUser {
           .distinct(true)
           .where(builder.equal(userRoot.get("email"), email));
 
+      userRoot.fetch("roles", JoinType.INNER);
+      
       TypedQuery<User> typedQuery = entityManager.createQuery(selectQuery);
       var result = typedQuery.getSingleResult();
 
