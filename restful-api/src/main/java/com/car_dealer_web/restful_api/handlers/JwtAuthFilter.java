@@ -1,6 +1,7 @@
 package com.car_dealer_web.restful_api.handlers;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.coyote.BadRequestException;
 import org.springframework.lang.NonNull;
@@ -23,6 +24,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   private final UserDetailsService userDetailsService;
   private final JwtAuthHandler jwtAuthHandler;
 
+  private static final List<String> WHITELIST_API_PATH = List.of(
+      "/api/v1/auth/login",
+      "/api/v1/auth/register");
+
   public JwtAuthFilter(
       UserDetailsService userDetailsService,
       JwtAuthHandler jwtAuthHandler) {
@@ -36,6 +41,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
       @NonNull HttpServletResponse response,
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
+    String apiPath = request.getRequestURI();
+
+    if (WHITELIST_API_PATH.contains(apiPath)) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
     final String header = request.getHeader("Authorization");
 
     if (header == null || !header.startsWith("Bearer ")) {

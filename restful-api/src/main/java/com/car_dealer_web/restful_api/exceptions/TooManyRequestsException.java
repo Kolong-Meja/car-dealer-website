@@ -14,7 +14,7 @@ public class TooManyRequestsException extends RuntimeException {
     super(message);
   }
 
-  public ApiResponse<Object> responseMessage(final String path) {
+  public ApiResponse<Object> response(final String path) {
     return new ApiResponse<>(HttpStatus.TOO_MANY_REQUESTS.value(), false, getMessage(), DateTime.now(), path, Map.of());
   }
 }
