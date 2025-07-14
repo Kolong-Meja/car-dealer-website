@@ -97,7 +97,7 @@ public class RoleRepository implements IRole {
       List<Predicate> countPredicates = new ArrayList<>();
 
       // WHERE DELETED_AT IS NULL.
-      countPredicates.add(builder.isNull(countRoleRoot.get("deleted_at")));
+      countPredicates.add(builder.isNull(countRoleRoot.get("deletedAt")));
 
       // CASE WHEN SEARCH REQUEST INCLUDED.
       searchRequestPredicate(
@@ -118,7 +118,7 @@ public class RoleRepository implements IRole {
       List<Predicate> selectPredicates = new ArrayList<>();
 
       // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
+      selectPredicates.add(builder.isNull(selectRoleRoot.get("deletedAt")));
 
       // CASE WHEN SEARCH REQUEST INCLUDED.
       searchRequestPredicate(
@@ -134,22 +134,22 @@ public class RoleRepository implements IRole {
           selectRoleRoot.get("name").alias("name"),
           selectRoleRoot.get("description").alias("description"),
           selectRoleRoot.get("status").alias("status"),
-          selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
-          selectRoleRoot.get("created_at").alias("created_at"),
-          selectRoleRoot.get("updated_at").alias("updated_at"),
-          selectRoleRoot.get("deleted_at").alias("deleted_at"),
+          selectRoleRoot.get("lastEditedBy").alias("last_edited_by"),
+          selectRoleRoot.get("createdAt").alias("created_at"),
+          selectRoleRoot.get("updatedAt").alias("updated_at"),
+          selectRoleRoot.get("deletedAt").alias("deleted_at"),
 
           // USERS SELECTED COLUMNS.
           selectJoinWithUser.get("id").alias("user_id"),
           selectJoinWithUser.get("fullname").alias("user_fullname"),
           selectJoinWithUser.get("bio").alias("user_bio"),
           selectJoinWithUser.get("email").alias("user_email"),
-          selectJoinWithUser.get("phone_number").alias("user_phone_number"),
+          selectJoinWithUser.get("phoneNumber").alias("user_phone_number"),
           selectJoinWithUser.get("address").alias("user_address"),
-          selectJoinWithUser.get("account_status").alias("user_account_status"),
-          selectJoinWithUser.get("active_status").alias("user_active_status"),
-          selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
-          selectJoinWithUser.get("last_login_at").alias("user_last_login_at"))
+          selectJoinWithUser.get("accountStatus").alias("user_account_status"),
+          selectJoinWithUser.get("activeStatus").alias("user_active_status"),
+          selectJoinWithUser.get("avatarUrl").alias("user_avatar_url"),
+          selectJoinWithUser.get("lastLoginAt").alias("user_last_login_at"))
           .distinct(true)
           .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
 
@@ -228,21 +228,21 @@ public class RoleRepository implements IRole {
           selectRoleRoot.get("name").alias("name"),
           selectRoleRoot.get("description").alias("description"),
           selectRoleRoot.get("status").alias("status"),
-          selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
-          selectRoleRoot.get("created_at").alias("created_at"),
-          selectRoleRoot.get("updated_at").alias("updated_at"),
-          selectRoleRoot.get("deleted_at").alias("deleted_at"),
+          selectRoleRoot.get("lastEditedBy").alias("last_edited_by"),
+          selectRoleRoot.get("createdAt").alias("created_at"),
+          selectRoleRoot.get("updatedAt").alias("updated_at"),
+          selectRoleRoot.get("deletedAt").alias("deleted_at"),
 
           // USERS SELECTED COLUMNS.
           selectJoinWithUser.get("id").alias("user_id"),
           selectJoinWithUser.get("fullname").alias("user_fullname"),
           selectJoinWithUser.get("bio").alias("user_bio"),
           selectJoinWithUser.get("email").alias("user_email"),
-          selectJoinWithUser.get("phone_number").alias("user_phone_number"),
+          selectJoinWithUser.get("phoneNumber").alias("user_phone_number"),
           selectJoinWithUser.get("address").alias("user_address"),
-          selectJoinWithUser.get("account_status").alias("user_account_status"),
-          selectJoinWithUser.get("active_status").alias("user_active_status"),
-          selectJoinWithUser.get("avatar_url").alias("user_avatar_url"))
+          selectJoinWithUser.get("accountStatus").alias("user_account_status"),
+          selectJoinWithUser.get("activeStatus").alias("user_active_status"),
+          selectJoinWithUser.get("avatarUrl").alias("user_avatar_url"))
           .distinct(true)
           .where(builder.and(
               builder.and(selectPredicates.toArray(Predicate[]::new)),
@@ -323,8 +323,8 @@ public class RoleRepository implements IRole {
     criteriaUpdate.set("name", updateRoleRequest.name());
     criteriaUpdate.set("description", updateRoleRequest.description());
     criteriaUpdate.set("status", updateRoleRequest.status());
-    criteriaUpdate.set("last_edited_by", data.id());
-    criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+    criteriaUpdate.set("lastEditedBy", data.id());
+    criteriaUpdate.set("updatedAt", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.equal(roleRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
@@ -356,10 +356,10 @@ public class RoleRepository implements IRole {
     CriteriaUpdate<Role> criteriaUpdate = builder.createCriteriaUpdate(Role.class);
     Root<Role> roleRoot = criteriaUpdate.from(Role.class);
 
-    criteriaUpdate.set("deleted_at", null);
+    criteriaUpdate.set("deletedAt", null);
     criteriaUpdate.where(builder.and(
         builder.equal(roleRoot.get("id"), id),
-        builder.isNotNull(roleRoot.get("deleted_at"))));
+        builder.isNotNull(roleRoot.get("deletedAt"))));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
     if (updated != 1) {
@@ -390,7 +390,7 @@ public class RoleRepository implements IRole {
     CriteriaUpdate<Role> criteriaUpdate = builder.createCriteriaUpdate(Role.class);
     Root<Role> roleRoot = criteriaUpdate.from(Role.class);
 
-    criteriaUpdate.set("deleted_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+    criteriaUpdate.set("deletedAt", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.equal(roleRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();

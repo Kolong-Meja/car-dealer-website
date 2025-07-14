@@ -92,11 +92,11 @@ public class UserRepository implements IUser {
           builder.not(countJoinWithRole.get("name").in("admin", "super admin")));
 
       // WHERE DELETED_AT IS NULL.
-      countPredicates.add(builder.isNull(countUserRoot.get("deleted_at")));
+      countPredicates.add(builder.isNull(countUserRoot.get("deletedAt")));
 
       // CASE WHEN SEARCH REQUEST INCLUDED.
       searchRequestPredicate(searchRequest, countPredicates, builder, countUserRoot,
-          Arrays.asList("fullname", "email", "phone_number"));
+          Arrays.asList("fullname", "email", "phoneNumber"));
 
       countQuery.select(builder.countDistinct(countUserRoot))
           .where(builder.and(countPredicates.toArray(Predicate[]::new)));
@@ -117,7 +117,7 @@ public class UserRepository implements IUser {
 
       // CASE WHEN SEARCH REQUEST INCLUDED.
       searchRequestPredicate(searchRequest, selectPredicates, builder, selectUserRoot,
-          Arrays.asList("fullname", "email", "phone_number"));
+          Arrays.asList("fullname", "email", "phoneNumber"));
 
       selectQuery.multiselect(
           // USERS SELECTED COLUMNS.
@@ -125,16 +125,16 @@ public class UserRepository implements IUser {
           selectUserRoot.get("fullname").alias("fullname"),
           selectUserRoot.get("bio").alias("bio"),
           selectUserRoot.get("email").alias("email"),
-          selectUserRoot.get("phone_number").alias("phone_number"),
+          selectUserRoot.get("phoneNumber").alias("phone_number"),
           selectUserRoot.get("address").alias("address"),
-          selectUserRoot.get("account_status").alias("account_status"),
-          selectUserRoot.get("active_status").alias("active_status"),
-          selectUserRoot.get("avatar_url").alias("avatar_url"),
-          selectUserRoot.get("last_login_at").alias("last_login_at"),
-          selectUserRoot.get("last_edited_by").alias("last_edited_by"),
-          selectUserRoot.get("created_at").alias("created_at"),
-          selectUserRoot.get("updated_at").alias("updated_at"),
-          selectUserRoot.get("deleted_at").alias("deleted_at"),
+          selectUserRoot.get("accountStatus").alias("account_status"),
+          selectUserRoot.get("activeStatus").alias("active_status"),
+          selectUserRoot.get("avatarUrl").alias("avatar_url"),
+          selectUserRoot.get("lastLoginAt").alias("last_login_at"),
+          selectUserRoot.get("lastEditedBy").alias("last_edited_by"),
+          selectUserRoot.get("createdAt").alias("created_at"),
+          selectUserRoot.get("updatedAt").alias("updated_at"),
+          selectUserRoot.get("deletedAt").alias("deleted_at"),
 
           // ROLES SELECTED COLUMNS.
           selectJoinWithRole.get("id").alias("role_id"),
@@ -220,15 +220,15 @@ public class UserRepository implements IUser {
           selectUserRoot.get("fullname").alias("fullname"),
           selectUserRoot.get("bio").alias("bio"),
           selectUserRoot.get("email").alias("email"),
-          selectUserRoot.get("phone_number").alias("phone_number"),
+          selectUserRoot.get("phoneNumber").alias("phone_number"),
           selectUserRoot.get("address").alias("address"),
-          selectUserRoot.get("account_status").alias("account_status"),
-          selectUserRoot.get("active_status").alias("active_status"),
-          selectUserRoot.get("avatar_url").alias("avatar_url"),
-          selectUserRoot.get("last_login_at").alias("last_login_at"),
-          selectUserRoot.get("created_at").alias("created_at"),
-          selectUserRoot.get("updated_at").alias("updated_at"),
-          selectUserRoot.get("deleted_at").alias("deleted_at"),
+          selectUserRoot.get("accountStatus").alias("account_status"),
+          selectUserRoot.get("activeStatus").alias("active_status"),
+          selectUserRoot.get("avatarUrl").alias("avatar_url"),
+          selectUserRoot.get("lastLoginAt").alias("last_login_at"),
+          selectUserRoot.get("createdAt").alias("created_at"),
+          selectUserRoot.get("updatedAt").alias("updated_at"),
+          selectUserRoot.get("deletedAt").alias("deleted_at"),
 
           // ROLES SELECTED COLUMNS.
           selectJoinWithRole.get("id").alias("role_id"),
@@ -290,10 +290,10 @@ public class UserRepository implements IUser {
 
     criteriaUpdate.set("fullname", updateUserRequest.fullname());
     criteriaUpdate.set("bio", updateUserRequest.bio());
-    criteriaUpdate.set("phone_number", updateUserRequest.phoneNumber());
+    criteriaUpdate.set("phoneNumber", updateUserRequest.phoneNumber());
     criteriaUpdate.set("email", updateUserRequest.email());
-    criteriaUpdate.set("last_edited_by", data.id());
-    criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+    criteriaUpdate.set("lastEditedBy", data.id());
+    criteriaUpdate.set("updatedAt", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.equal(userRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
@@ -324,10 +324,10 @@ public class UserRepository implements IUser {
     CriteriaUpdate<User> criteriaUpdate = builder.createCriteriaUpdate(User.class);
     Root<User> userRoot = criteriaUpdate.from(User.class);
 
-    criteriaUpdate.set("deleted_at", null);
+    criteriaUpdate.set("deletedAt", null);
     criteriaUpdate.where(builder.and(
         builder.equal(userRoot.get("id"), id),
-        builder.isNotNull(userRoot.get("deleted_at"))));
+        builder.isNotNull(userRoot.get("deletedAt"))));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
     if (updated != 1) {
@@ -357,7 +357,7 @@ public class UserRepository implements IUser {
     CriteriaUpdate<User> criteriaUpdate = builder.createCriteriaUpdate(User.class);
     Root<User> userRoot = criteriaUpdate.from(User.class);
 
-    criteriaUpdate.set("deleted_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
+    criteriaUpdate.set("deletedAt", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.equal(userRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
