@@ -30,9 +30,9 @@ public record RegisterRequest(
 
       @Size(min = 50, max = 250) @NotBlank(message = "address cannot be blank.") String address,
 
-      @Size(max = 20) @NotBlank(message = "account status cannot be blank.") String accountStatus,
+      @Size(max = 20) String accountStatus,
 
-      @Size(max = 20) @NotBlank(message = "active status cannot be blank.") String activeStatus,
+      @Size(max = 20) String activeStatus,
 
       @Pattern(regexp = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$", message = "Avatar url is not valid.") String avatarUrl) {
     this.fullname = Objects.requireNonNull(fullname, "fullname cannot be null.");
@@ -41,8 +41,8 @@ public record RegisterRequest(
     this.password = Objects.requireNonNull(password, "password cannot be null.");
     this.phoneNumber = Objects.requireNonNull(phoneNumber, "phone number cannot be null.");
     this.address = Objects.requireNonNull(address, "address cannot be null.");
-    this.accountStatus = Objects.requireNonNull(accountStatus, "account status cannot be null.");
-    this.activeStatus = Objects.requireNonNull(activeStatus, "active status cannot be null.");
-    this.avatarUrl = Objects.requireNonNull(avatarUrl, "avatar url cannot be null.");
+    this.accountStatus = accountStatus;
+    this.activeStatus = activeStatus;
+    this.avatarUrl = avatarUrl;
   }
 }
