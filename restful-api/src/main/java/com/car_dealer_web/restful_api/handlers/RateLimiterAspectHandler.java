@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -17,6 +19,8 @@ import com.car_dealer_web.restful_api.exceptions.TooManyRequestsException;
 @Component
 public class RateLimiterAspectHandler {
   public static final String ERROR_MESSAGE = "To many request at endpoint %s from IP %s! Please try again after %d milliseconds!";
+
+  private static final Logger LOG = LoggerFactory.getLogger(RateLimiterAspectHandler.class);
 
   private final ConcurrentHashMap<String, List<Long>> requestCounts = new ConcurrentHashMap<>();
 
@@ -39,6 +43,8 @@ public class RateLimiterAspectHandler {
     cleanUpRequestCounts(currTime);
 
     if (requestCounts.get(ipAddrKey).size() > rateLimitMax) {
+      LOG.error(ERROR_MESSAGE);
+
       throw new TooManyRequestsException(
           String.format(ERROR_MESSAGE, requestAttributes.getRequest().getRequestURI(), ipAddrKey, rateLimitDuration));
     }
