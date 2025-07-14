@@ -46,7 +46,7 @@ public class ApiExceptionHandler {
         .stream()
         .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (_, b) -> b));
     final ApiResponse<Object> response = new ApiResponse<Object>(HttpStatus.BAD_REQUEST.value(), false,
-        exception.getMessage(),
+        "Validation failed.",
         DateTime.now(), httpServletRequest.getRequestURI(), errors);
 
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -63,7 +63,7 @@ public class ApiExceptionHandler {
             ConstraintViolation::getMessage,
             (_, b) -> b));
     final ApiResponse<Object> response = new ApiResponse<Object>(HttpStatus.BAD_REQUEST.value(), false,
-        exception.getMessage(),
+        "Validation failed.",
         DateTime.now(), httpServletRequest.getRequestURI(), errors);
 
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -75,7 +75,7 @@ public class ApiExceptionHandler {
     LOG.error(exception.getMessage(), exception);
 
     final ApiResponse<Object> response = new ApiResponse<Object>(HttpStatus.BAD_REQUEST.value(), false,
-        exception.getMessage(),
+        "Invalid or missing request body.",
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
 
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
@@ -87,7 +87,7 @@ public class ApiExceptionHandler {
     LOG.error(exception.getMessage(), exception);
 
     final ApiResponse<Object> response = new ApiResponse<Object>(HttpStatus.BAD_REQUEST.value(), false,
-        exception.getMessage(),
+        "Missing required parameter: " + exception.getParameterName(),
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
 
     return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
