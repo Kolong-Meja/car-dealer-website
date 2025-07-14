@@ -2,7 +2,6 @@ package com.car_dealer_web.restful_api.seeders;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import com.car_dealer_web.restful_api.enums.RoleStatus;
@@ -15,8 +14,7 @@ import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
 
 @Component
-@Transactional
-public class RoleSeeder implements CommandLineRunner {
+public class RoleSeeder {
   private final EntityManager entityManager;
   private final static Logger LOG = LoggerFactory.getLogger(RoleSeeder.class);
 
@@ -24,11 +22,7 @@ public class RoleSeeder implements CommandLineRunner {
     this.entityManager = entityManager;
   }
 
-  @Override
-  public void run(String... args) throws Exception {
-    loadRoleData();
-  }
-
+  @Transactional
   public final void loadRoleData() {
     LOG.info("Running Role Seeder...");
 

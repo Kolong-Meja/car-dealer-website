@@ -63,7 +63,7 @@ public class User implements UserDetails {
   @Column(name = "email", length = 100, nullable = false, unique = true)
   private String email;
 
-  @Size(min = 8)
+  @Size(min = 8, max = 50, message = "password must be between 8 and 50 characters.")
   @Pattern(regexp = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$", message = "password is not valid.")
   @NotBlank(message = "password cannot be blank.")
   @Column(name = "password", length = 50, nullable = false)
