@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.car_dealer_web.restful_api.annotations.RateLimit;
 import com.car_dealer_web.restful_api.dtos.joins.RoleJoinDTO;
 import com.car_dealer_web.restful_api.interfaces.IRole;
 import com.car_dealer_web.restful_api.models.Role;
@@ -34,6 +35,7 @@ public class RoleController {
   }
 
   @GetMapping("/")
+  @RateLimit
   public ResponseEntity<ApiResponse<PaginationResponse<RoleJoinDTO>>> findAll(
       @RequestParam(value = "q", required = false) SearchRequest searchRequest,
       @RequestParam(required = false) PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
@@ -41,18 +43,21 @@ public class RoleController {
   }
 
   @GetMapping("/{id}")
+  @RateLimit
   public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(@PathVariable String id,
       HttpServletRequest httpServletRequest) {
     return iRole.findOne(id, httpServletRequest);
   }
 
   @PostMapping("/")
+  @RateLimit
   public ResponseEntity<ApiResponse<Role>> save(
       @Valid @RequestBody(required = true) CreateRoleRequest createRoleRequest, HttpServletRequest httpServletRequest) {
     return iRole.save(createRoleRequest, httpServletRequest);
   }
 
   @PatchMapping("/{id}")
+  @RateLimit
   public ResponseEntity<ApiResponse<Object>> update(@PathVariable String id,
       @Valid @RequestBody(required = false) UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest) {

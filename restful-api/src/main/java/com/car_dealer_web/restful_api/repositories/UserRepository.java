@@ -10,6 +10,8 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +76,7 @@ public class UserRepository implements IUser {
   }
 
   @Override
+  @Cacheable(value = "users_cache")
   public ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(SearchRequest searchRequest,
       PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
     LOG.info("Fetching all user entity resources...");
@@ -197,6 +200,7 @@ public class UserRepository implements IUser {
   }
 
   @Override
+  @Cacheable(value = "users_cache", key = "#id")
   public ResponseEntity<ApiResponse<UserJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Fetching user entity with ID %s resource...", id));
 
@@ -262,6 +266,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
+  @CacheEvict(value = "users_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> update(String id, UpdateUserRequest updateUserRequest,
       HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Updating user entity with ID %s...", id));
@@ -317,6 +322,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
+  @CacheEvict(value = "users_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Restoring user entity with ID %s...", id));
 
@@ -350,6 +356,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
+  @CacheEvict(value = "users_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Soft deleting user entity with ID %s...", id));
 
@@ -381,6 +388,7 @@ public class UserRepository implements IUser {
 
   @Override
   @Transactional
+  @CacheEvict(value = "users_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Force deleting user entity with ID %s...", id));
 

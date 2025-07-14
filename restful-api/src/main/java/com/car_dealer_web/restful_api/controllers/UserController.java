@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.car_dealer_web.restful_api.annotations.RateLimit;
 import com.car_dealer_web.restful_api.dtos.joins.UserJoinDTO;
 import com.car_dealer_web.restful_api.interfaces.IUser;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
@@ -31,6 +32,7 @@ public class UserController {
   }
 
   @GetMapping("/")
+  @RateLimit
   public ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(
       @RequestParam(value = "q", required = false) SearchRequest searchRequest,
       @RequestParam(required = false) PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
@@ -38,12 +40,14 @@ public class UserController {
   }
 
   @GetMapping("/{id}")
+  @RateLimit
   public ResponseEntity<ApiResponse<UserJoinDTO>> findOne(@PathVariable String id,
       HttpServletRequest httpServletRequest) {
     return iUser.findOne(id, httpServletRequest);
   }
 
   @PatchMapping("/{id}")
+  @RateLimit
   public ResponseEntity<ApiResponse<Object>> update(@PathVariable String id,
       @Valid @RequestBody(required = false) UpdateUserRequest updateUserRequest,
       HttpServletRequest httpServletRequest) {

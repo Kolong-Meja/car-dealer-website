@@ -110,7 +110,6 @@ public class AuthRepository implements IAuth {
     user.setAddress(registerRequest.address());
     user.setAccountStatus(UserAccountStatus.ACTIVE.toString().toLowerCase());
     user.setActiveStatus(UserActiveStatus.OFFLINE.toString().toLowerCase());
-    user.setAvatarUrl(registerRequest.avatar_url());
     user.setRoles(defaultRoles);
 
     entityManager.persist(user);

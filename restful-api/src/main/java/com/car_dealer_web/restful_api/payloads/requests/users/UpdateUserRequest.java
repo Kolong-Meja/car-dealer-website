@@ -24,7 +24,7 @@ public record UpdateUserRequest(
 
       @Size(max = 16) @Pattern(regexp = "^\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$", message = "phone number is not valid.") @NotBlank(message = "phone number cannot be blank.") String phone_number,
 
-      @Size(min = 50, max = 250) @NotBlank(message = "address cannot be blank.") String address,
+      @Size(min = 20, max = 250) @NotBlank(message = "address cannot be blank.") String address,
 
       @Pattern(regexp = "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$", message = "Avatar url is not valid.") String avatar_url,
 
