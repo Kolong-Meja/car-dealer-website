@@ -36,18 +36,20 @@ public class RoleController {
   @GetMapping("/")
   public ResponseEntity<ApiResponse<PaginationResponse<RoleJoinDTO>>> findAll(
       @RequestParam(value = "q", required = false) SearchRequest searchRequest,
-      @RequestParam(required = false) PaginationRequest paginationRequest) {
-    return iRole.findAll(searchRequest, paginationRequest);
+      @RequestParam(required = false) PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
+    return iRole.findAll(searchRequest, paginationRequest, httpServletRequest);
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(@PathVariable String id) {
-    return iRole.findOne(id);
+  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(@PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    return iRole.findOne(id, httpServletRequest);
   }
 
   @PostMapping("/")
-  public ResponseEntity<ApiResponse<Role>> save(@Valid @RequestBody(required = true) CreateRoleRequest request) {
-    return iRole.save(request);
+  public ResponseEntity<ApiResponse<Role>> save(
+      @Valid @RequestBody(required = true) CreateRoleRequest createRoleRequest, HttpServletRequest httpServletRequest) {
+    return iRole.save(createRoleRequest, httpServletRequest);
   }
 
   @PatchMapping("/{id}")
@@ -58,17 +60,18 @@ public class RoleController {
   }
 
   @PatchMapping("/{id}/restore")
-  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id) {
-    return iRole.restore(id);
+  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id, HttpServletRequest httpServletRequest) {
+    return iRole.restore(id, httpServletRequest);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id) {
-    return iRole.delete(id);
+  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id, HttpServletRequest httpServletRequest) {
+    return iRole.delete(id, httpServletRequest);
   }
 
   @DeleteMapping("/{id}/force")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(@PathVariable String id) {
-    return iRole.forceDelete(id);
+  public ResponseEntity<ApiResponse<Object>> forceDelete(@PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    return iRole.forceDelete(id, httpServletRequest);
   }
 }

@@ -16,18 +16,18 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface IUser {
   ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(SearchRequest searchRequest,
-      PaginationRequest paginationRequest);
+      PaginationRequest paginationRequest, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<UserJoinDTO>> findOne(String id);
+  ResponseEntity<ApiResponse<UserJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest);
 
   ResponseEntity<ApiResponse<Object>> update(String id, UpdateUserRequest updateUserRequest,
       HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> restore(String id);
+  ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> delete(String id);
+  ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> forceDelete(String id);
+  ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest);
 
   // FOR AUTH
   Optional<User> findOneByEmail(String email);

@@ -14,7 +14,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.car_dealer_web.restful_api.annotations.UUIDv7;
+import com.car_dealer_web.restful_api.annotations.Cuid;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -41,11 +41,11 @@ import jakarta.persistence.ManyToMany;
 })
 public class User implements UserDetails {
   @Id
-  @UUIDv7
-  @GeneratedValue(generator = "uuid-v7")
-  @Size(max = 36)
+  @Cuid
+  @GeneratedValue(generator = "cuid")
+  @Size(max = 20)
   @NotBlank(message = "id cannot be blank.")
-  @Column(name = "id", length = 36, nullable = false)
+  @Column(name = "id", length = 20, nullable = false)
   private String id;
 
   @Size(max = 100)

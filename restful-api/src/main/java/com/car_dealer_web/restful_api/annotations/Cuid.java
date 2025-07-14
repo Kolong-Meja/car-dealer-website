@@ -12,6 +12,6 @@ import com.car_dealer_web.restful_api.handlers.IdGenerator;
 @IdGeneratorType(IdGenerator.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface UUIDv7 {
+public @interface Cuid {
   boolean generated() default true;
 }

@@ -40,17 +40,11 @@ public class RoleSeeder implements CommandLineRunner {
     Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
 
     if (totalElements == 0) {
-      /**
-       * DATA PERTAMA.
-       */
       Role initialData = new Role();
       initialData.setName("admin");
       initialData.setDescription("Limited access level, often focused on a subset of users or features.");
       initialData.setStatus(RoleStatus.ACTIVE.toString().toLowerCase());
 
-      /**
-       * DATA KEDUA.
-       */
       Role secondData = new Role();
       secondData.setName("super admin");
       secondData.setDescription("The highest level of access, typically with full control over the system.");

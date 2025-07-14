@@ -37,6 +37,7 @@ import com.car_dealer_web.restful_api.payloads.requests.auth.LoginRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RefreshAuthTokenRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RegisterRequest;
 import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
+import com.car_dealer_web.restful_api.utils.DateTime;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -74,7 +75,8 @@ public class AuthRepository implements IAuth {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse<Object>> register(RegisterRequest request) {
+  public ResponseEntity<ApiResponse<Object>> register(RegisterRequest registerRequest,
+      HttpServletRequest httpServletRequest) {
     LOG.info("Registering new user...");
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -100,15 +102,15 @@ public class AuthRepository implements IAuth {
     defaultRoles.add(result);
 
     User user = new User();
-    user.setFullname(request.fullname());
-    user.setBio(request.bio());
-    user.setPhoneNumber(request.phoneNumber());
-    user.setEmail(request.email());
-    user.setPassword(passwordEncoder.encode(request.password()));
-    user.setAddress(request.address());
+    user.setFullname(registerRequest.fullname());
+    user.setBio(registerRequest.bio());
+    user.setPhoneNumber(registerRequest.phoneNumber());
+    user.setEmail(registerRequest.email());
+    user.setPassword(passwordEncoder.encode(registerRequest.password()));
+    user.setAddress(registerRequest.address());
     user.setAccountStatus(UserAccountStatus.ACTIVE.toString().toLowerCase());
     user.setActiveStatus(UserActiveStatus.OFFLINE.toString().toLowerCase());
-    user.setAvatarUrl(request.avatarUrl());
+    user.setAvatarUrl(registerRequest.avatarUrl());
     user.setRoles(defaultRoles);
 
     entityManager.persist(user);
@@ -126,10 +128,9 @@ public class AuthRepository implements IAuth {
     resource.put("type", "bearer");
 
     // SETUP THE API (JSON) RESPONSE.
-    var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
-    var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully registering new user.",
-        now.format(formatter),
+        DateTime.now(),
+        httpServletRequest.getRequestURI(),
         resource);
 
     LOG.info(response.message());
@@ -138,13 +139,13 @@ public class AuthRepository implements IAuth {
   }
 
   @Override
-  public ResponseEntity<ApiResponse<Object>> login(LoginRequest request) {
-    LOG.info(String.format("Doing login as %s", request.email()));
+  public ResponseEntity<ApiResponse<Object>> login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
+    LOG.info(String.format("Doing login as %s", loginRequest.email()));
 
     authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(request.email(), request.password()));
-    var user = iUser.findOneByEmail(request.email())
-        .orElseThrow(() -> new ResourceNotFoundException(String.format("user %s not found.", request.email())));
+        new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password()));
+    var user = iUser.findOneByEmail(loginRequest.email())
+        .orElseThrow(() -> new ResourceNotFoundException(String.format("user %s not found.", loginRequest.email())));
 
     var jwt = jwtAuthHandler.generateToken(user);
     var refreshToken = jwtAuthHandler.generateRefreshToken(user);
@@ -157,11 +158,10 @@ public class AuthRepository implements IAuth {
     resource.put("tokens", tokens);
     resource.put("type", "bearer");
 
-    var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
-    var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Login is success. Welcome back %s", request.email()),
-        now.format(formatter),
+        String.format("Login is success. Welcome back %s", loginRequest.email()),
+        DateTime.now(),
+        httpServletRequest.getRequestURI(),
         resource);
 
     LOG.info(response.message());
@@ -214,6 +214,7 @@ public class AuthRepository implements IAuth {
     // SETUP THE API (JSON) RESPONSE.
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully fetch personal data.",
         now.format(formatter),
+        request.getRequestURI(),
         resource);
 
     LOG.info(response.message());
@@ -222,8 +223,8 @@ public class AuthRepository implements IAuth {
   }
 
   @Override
-  public ResponseEntity<ApiResponse<Object>> refresh(HttpServletRequest httpServletRequest,
-      RefreshAuthTokenRequest refreshAuthTokenRequest) {
+  public ResponseEntity<ApiResponse<Object>> refresh(RefreshAuthTokenRequest refreshAuthTokenRequest,
+      HttpServletRequest httpServletRequest) {
     LOG.info("Refreshing auth token...");
 
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
@@ -252,10 +253,8 @@ public class AuthRepository implements IAuth {
     resource.put("access_token", newJwt);
     resource.put("type", "bearer");
 
-    var now = LocalDateTime.now(ZoneId.of("Asia/Jakarta"));
-    var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully refresh auth token.",
-        now.format(formatter), resource);
+        DateTime.now(), httpServletRequest.getRequestURI(), resource);
 
     LOG.info(response.message());
 

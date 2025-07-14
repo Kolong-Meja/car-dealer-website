@@ -7,17 +7,20 @@ public record ApiResponse<T>(
     boolean success,
     String message,
     String timestamps,
+    String path,
     T resource) {
   public ApiResponse(
       int status,
       boolean success,
       String message,
       String timestamps,
+      String path,
       T resource) {
     this.status = Objects.requireNonNull(status, "status cannot be null.");
     this.success = Objects.requireNonNull(success, "success cannot be null.");
     this.message = Objects.requireNonNull(message, "message cannot be null.");
     this.timestamps = Objects.requireNonNull(timestamps, "timestamps cannot be null.");
+    this.path = Objects.requireNonNull(path, "path cannot be null.");
     this.resource = Objects.requireNonNull(resource, "resource cannot be null.");
   }
 }

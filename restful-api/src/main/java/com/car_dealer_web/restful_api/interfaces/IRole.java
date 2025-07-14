@@ -15,18 +15,18 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface IRole {
   ResponseEntity<ApiResponse<PaginationResponse<RoleJoinDTO>>> findAll(SearchRequest searchRequest,
-      PaginationRequest paginationRequest);
+      PaginationRequest paginationRequest, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(String id);
+  ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Role>> save(CreateRoleRequest request);
+  ResponseEntity<ApiResponse<Role>> save(CreateRoleRequest createRoleRequest, HttpServletRequest httpServletRequest);
 
   ResponseEntity<ApiResponse<Object>> update(String id, UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> restore(String id);
+  ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> delete(String id);
+  ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> forceDelete(String id);
+  ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest);
 }

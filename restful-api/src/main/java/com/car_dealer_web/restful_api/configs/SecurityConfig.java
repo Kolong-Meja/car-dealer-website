@@ -10,6 +10,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import com.car_dealer_web.restful_api.handlers.AccessDeniedResponseHandler;
+import com.car_dealer_web.restful_api.handlers.AuthenticationEntryPointResponseHandler;
 import com.car_dealer_web.restful_api.handlers.JwtAuthFilter;
 
 @Configuration
@@ -18,12 +20,18 @@ import com.car_dealer_web.restful_api.handlers.JwtAuthFilter;
 public class SecurityConfig {
   private final JwtAuthFilter jwtAuthFilter;
   private final AuthenticationProvider authenticationProvider;
+  private final AccessDeniedResponseHandler accessDeniedResponseHandler;
+  private final AuthenticationEntryPointResponseHandler authenticationEntryPointResponseHandler;
 
   public SecurityConfig(
       JwtAuthFilter jwtAuthFilter,
-      AuthenticationProvider authenticationProvider) {
+      AuthenticationProvider authenticationProvider,
+      AccessDeniedResponseHandler accessDeniedResponseHandler,
+      AuthenticationEntryPointResponseHandler authenticationEntryPointResponseHandler) {
     this.jwtAuthFilter = jwtAuthFilter;
     this.authenticationProvider = authenticationProvider;
+    this.accessDeniedResponseHandler = accessDeniedResponseHandler;
+    this.authenticationEntryPointResponseHandler = authenticationEntryPointResponseHandler;
   }
 
   @Bean
@@ -38,6 +46,8 @@ public class SecurityConfig {
         .anyRequest()
         .authenticated())
         .csrf(csrf -> csrf.disable())
+        .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPointResponseHandler)
+            .accessDeniedHandler(accessDeniedResponseHandler))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authenticationProvider(authenticationProvider)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

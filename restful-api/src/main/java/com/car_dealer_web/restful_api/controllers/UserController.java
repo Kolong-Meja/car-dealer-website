@@ -33,13 +33,14 @@ public class UserController {
   @GetMapping("/")
   public ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(
       @RequestParam(value = "q", required = false) SearchRequest searchRequest,
-      @RequestParam(required = false) PaginationRequest paginationRequest) {
-    return iUser.findAll(searchRequest, paginationRequest);
+      @RequestParam(required = false) PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
+    return iUser.findAll(searchRequest, paginationRequest, httpServletRequest);
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<ApiResponse<UserJoinDTO>> findOne(@PathVariable String id) {
-    return iUser.findOne(id);
+  public ResponseEntity<ApiResponse<UserJoinDTO>> findOne(@PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    return iUser.findOne(id, httpServletRequest);
   }
 
   @PatchMapping("/{id}")
@@ -50,17 +51,17 @@ public class UserController {
   }
 
   @PatchMapping("/{id}/restore")
-  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id) {
-    return iUser.restore(id);
+  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id, HttpServletRequest httpServletRequest) {
+    return iUser.restore(id, httpServletRequest);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id) {
-    return iUser.delete(id);
+  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id, HttpServletRequest httpServletRequest) {
+    return iUser.delete(id, httpServletRequest);
   }
 
   @DeleteMapping("/{id}/force")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(String id) {
-    return iUser.forceDelete(id);
+  public ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest) {
+    return iUser.forceDelete(id, httpServletRequest);
   }
 }
