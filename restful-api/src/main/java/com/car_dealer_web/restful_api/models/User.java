@@ -75,9 +75,9 @@ public class User implements UserDetails {
   @Column(name = "phone_number", length = 16, nullable = false, unique = true)
   private String phone_number;
 
-  @Size(min = 50, max = 250)
+  @Size(min = 20, max = 250)
   @NotBlank(message = "address cannot be blank.")
-  @Column(name = "address", length = 200, nullable = true)
+  @Column(name = "address", length = 250, nullable = true)
   private String address;
 
   @Size(max = 20)
