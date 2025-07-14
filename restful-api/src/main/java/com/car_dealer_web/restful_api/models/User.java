@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.TimeZoneColumn;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -97,10 +96,10 @@ public class User implements UserDetails {
   @Column(name = "avatar_url", columnDefinition = "TEXT", nullable = true)
   private String avatarUrl;
 
-  @TimeZoneColumn(name = "password_change_at")
+  @Column(name = "password_change_at")
   private LocalDateTime passwordChangeAt;
 
-  @TimeZoneColumn(name = "last_login_at")
+  @Column(name = "last_login_at")
   private LocalDateTime lastLoginAt;
 
   @Size(max = 100)
@@ -113,7 +112,7 @@ public class User implements UserDetails {
   @UpdateTimestamp
   private LocalDateTime updatedAt;
 
-  @TimeZoneColumn(name = "deleted_at")
+  @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
   @ManyToMany(fetch = FetchType.LAZY, cascade = {

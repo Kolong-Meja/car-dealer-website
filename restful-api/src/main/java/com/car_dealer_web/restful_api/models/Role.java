@@ -6,7 +6,6 @@ import java.util.Set;
 
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.TimeZoneColumn;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import com.car_dealer_web.restful_api.annotations.Cuid;
@@ -60,7 +59,7 @@ public class Role {
   @UpdateTimestamp
   private LocalDateTime updatedAt;
 
-  @TimeZoneColumn(name = "deleted_at")
+  @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
   @ManyToMany(fetch = FetchType.LAZY, cascade = {
