@@ -24,15 +24,18 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   private final UserDetailsService userDetailsService;
   private final JwtAuthHandler jwtAuthHandler;
 
-  private static final List<String> WHITELIST_API_PATH = List.of(
-      "/v1/auth/login",
-      "/v1/auth/register");
+  private static final List<String> WHITELIST_API_PATH_PATTERN = List.of(
+      "/v1/auth/**");
 
   public JwtAuthFilter(
       UserDetailsService userDetailsService,
       JwtAuthHandler jwtAuthHandler) {
     this.userDetailsService = userDetailsService;
     this.jwtAuthHandler = jwtAuthHandler;
+  }
+
+  private boolean isWhitelisted(String path) {
+    return WHITELIST_API_PATH_PATTERN.stream().anyMatch(path::startsWith);
   }
 
   @Override
@@ -43,7 +46,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
     String apiPath = request.getRequestURI().substring(request.getContextPath().length());
 
-    if (WHITELIST_API_PATH.contains(apiPath)) {
+    if (isWhitelisted(apiPath)) {
       filterChain.doFilter(request, response);
       return;
     }
