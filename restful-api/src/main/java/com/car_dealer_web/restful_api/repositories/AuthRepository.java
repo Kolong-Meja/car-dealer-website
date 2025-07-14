@@ -93,7 +93,7 @@ public class AuthRepository implements IAuth {
     selectQuery.select(selectRoleRoot)
         .distinct(true)
         .where(builder.and(builder.and(selectPredicates.toArray(Predicate[]::new)),
-            builder.equal(selectRoleRoot.get("name"), "user")));
+            builder.equal(selectRoleRoot.get("name"), "customer")));
 
     TypedQuery<Role> typedQuery = entityManager.createQuery(selectQuery);
     var result = typedQuery.getSingleResult();
