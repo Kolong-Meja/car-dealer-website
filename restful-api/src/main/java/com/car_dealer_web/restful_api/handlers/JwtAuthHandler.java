@@ -68,7 +68,7 @@ public class JwtAuthHandler {
     return Jwts.builder()
         .claims(customClaims)
         .issuer(hostName)
-        .subject(user.getId())
+        .subject(user.getEmail())
         .expiration(exp)
         .notBefore(nbf)
         .issuedAt(iss)
