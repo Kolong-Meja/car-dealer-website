@@ -67,6 +67,8 @@ services:
     depends_on:
       - postgresql
       - cache
+    volumes:
+      - ./logs:/api/logs
     networks:
       car-dealer-website-networks:
         aliases:
