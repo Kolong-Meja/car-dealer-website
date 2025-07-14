@@ -25,8 +25,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
   private final JwtAuthHandler jwtAuthHandler;
 
   private static final List<String> WHITELIST_API_PATH = List.of(
-      "/api/v1/auth/login",
-      "/api/v1/auth/register");
+      "/v1/auth/login",
+      "/v1/auth/register");
 
   public JwtAuthFilter(
       UserDetailsService userDetailsService,
@@ -41,7 +41,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
       @NonNull HttpServletResponse response,
       @NonNull FilterChain filterChain)
       throws ServletException, IOException {
-    String apiPath = request.getRequestURI();
+    String apiPath = request.getRequestURI().substring(request.getContextPath().length());
 
     if (WHITELIST_API_PATH.contains(apiPath)) {
       filterChain.doFilter(request, response);
@@ -51,8 +51,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     final String header = request.getHeader("Authorization");
 
     if (header == null || !header.startsWith("Bearer ")) {
-      filterChain.doFilter(request, response);
-
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
