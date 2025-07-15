@@ -1,8 +1,15 @@
 .vscode/
 .idea/
+
+db/
 .db/
+
+cache/
 .cache/
+
+logs/
 .logs/
+*.log
 
 .env
 .env.local
@@ -10,6 +17,7 @@
 *.env
 *.key
 *.pem
+*.conf
 
 *.json
 
