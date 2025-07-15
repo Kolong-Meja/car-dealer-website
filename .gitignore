@@ -2,6 +2,7 @@
 .idea/
 .db/
 .cache/
+.logs/
 
 .env
 .env.local
