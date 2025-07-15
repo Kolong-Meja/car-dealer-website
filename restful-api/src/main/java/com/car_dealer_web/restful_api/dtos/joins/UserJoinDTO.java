@@ -23,7 +23,11 @@ public record UserJoinDTO(
     String roleId,
     String roleName,
     String roleDescription,
-    String roleStatus) {
+    String roleStatus,
+    String permissionId,
+    String permissionName,
+    String permissionDescription,
+    String permissionStatus) {
   public UserJoinDTO(
       String id,
       String fullname,
@@ -42,7 +46,11 @@ public record UserJoinDTO(
       String roleId,
       String roleName,
       String roleDescription,
-      String roleStatus) {
+      String roleStatus,
+      String permissionId,
+      String permissionName,
+      String permissionDescription,
+      String permissionStatus) {
     this.id = Objects.requireNonNull(id, "id cannot be null.");
     this.fullname = Objects.requireNonNull(fullname, "fullname cannot be null.");
     this.bio = bio;
@@ -61,6 +69,10 @@ public record UserJoinDTO(
     this.roleName = Objects.requireNonNull(roleName, "role name cannot be null.");
     this.roleDescription = roleDescription;
     this.roleStatus = Objects.requireNonNull(roleStatus, "role status cannot be null.");
+    this.permissionId = Objects.requireNonNull(permissionId, "permission id cannot be null.");
+    this.permissionName = Objects.requireNonNull(permissionName, "permission name cannot be null.");
+    this.permissionDescription = permissionDescription;
+    this.permissionStatus = permissionStatus;
   }
 
   public static final UserJoinDTO fromTuple(Tuple tuple) {
@@ -85,6 +97,12 @@ public record UserJoinDTO(
         tuple.get("role_id", String.class),
         tuple.get("role_name", String.class),
         tuple.get("role_description", String.class),
-        tuple.get("role_status", String.class));
+        tuple.get("role_status", String.class),
+
+        // PERMISSION COLUMNS.
+        tuple.get("permission_id", String.class),
+        tuple.get("permission_name", String.class),
+        tuple.get("permission_description", String.class),
+        tuple.get("permission_status", String.class));
   }
 }

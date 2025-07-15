@@ -1,16 +1,16 @@
-package com.car_dealer_web.restful_api.payloads.requests.roles;
+package com.car_dealer_web.restful_api.payloads.requests.permissions;
 
 import java.util.Objects;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record UpdateRoleRequest(
+public record UpdatePermissionRequest(
     String name,
     String description,
     String status,
     String last_edited_by) {
-  public UpdateRoleRequest(
+  public UpdatePermissionRequest(
       @Size(max = 50) @NotBlank(message = "name cannot be blank.") String name,
       @Size(max = 512) @NotBlank(message = "description cannot be blank.") String description,
       @Size(max = 20) String status,

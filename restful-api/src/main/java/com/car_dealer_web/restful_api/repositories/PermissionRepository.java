@@ -18,21 +18,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
 import com.car_dealer_web.restful_api.dtos.UserDTO;
-import com.car_dealer_web.restful_api.dtos.joins.RoleJoinDTO;
+import com.car_dealer_web.restful_api.dtos.joins.PermissionJoinDTO;
 import com.car_dealer_web.restful_api.enums.RoleStatus;
 import com.car_dealer_web.restful_api.exceptions.BadRequestException;
 import com.car_dealer_web.restful_api.exceptions.ResourceNotFoundException;
 import com.car_dealer_web.restful_api.exceptions.UnauthorizedException;
 import com.car_dealer_web.restful_api.handlers.JwtAuthHandler;
-import com.car_dealer_web.restful_api.interfaces.IRole;
+import com.car_dealer_web.restful_api.interfaces.IPermission;
 import com.car_dealer_web.restful_api.interfaces.IUser;
 import com.car_dealer_web.restful_api.models.Permission;
 import com.car_dealer_web.restful_api.models.Role;
 import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
-import com.car_dealer_web.restful_api.payloads.requests.roles.CreateRoleRequest;
-import com.car_dealer_web.restful_api.payloads.requests.roles.UpdateRoleRequest;
+import com.car_dealer_web.restful_api.payloads.requests.permissions.CreatePermissionRequest;
+import com.car_dealer_web.restful_api.payloads.requests.permissions.UpdatePermissionRequest;
 import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
 import com.car_dealer_web.restful_api.utils.DateTime;
@@ -53,23 +53,20 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 
 @Repository
-public class RoleRepository implements IRole {
+public class PermissionRepository implements IPermission {
   private final IUser iUser;
   private final EntityManager entityManager;
   private final JwtAuthHandler jwtAuthHandler;
   private final static Logger LOG = LoggerFactory.getLogger(RoleRepository.class);
 
-  public RoleRepository(
-      IUser iUser,
-      EntityManager entityManager,
-      JwtAuthHandler jwtAuthHandler) {
+  public PermissionRepository(IUser iUser, EntityManager entityManager, JwtAuthHandler jwtAuthHandler) {
     this.iUser = iUser;
     this.entityManager = entityManager;
     this.jwtAuthHandler = jwtAuthHandler;
   }
 
   private final void searchRequestPredicate(
-      SearchRequest request, List<Predicate> predicates, CriteriaBuilder builder, Root<Role> root,
+      SearchRequest request, List<Predicate> predicates, CriteriaBuilder builder, Root<Permission> root,
       List<String> fields) {
     String queryLower = "%" + request.query().toLowerCase() + "%";
 
@@ -83,17 +80,17 @@ public class RoleRepository implements IRole {
   }
 
   @Override
-  @Cacheable(value = "roles_cache")
-  public ResponseEntity<ApiResponse<PaginationResponse<RoleJoinDTO>>> findAll(SearchRequest searchRequest,
+  @Cacheable(value = "permissions_cache")
+  public ResponseEntity<ApiResponse<PaginationResponse<PermissionJoinDTO>>> findAll(SearchRequest searchRequest,
       PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Fetching all role entity resources...");
+    LOG.info("Fetching all permission entity resources...");
 
     try {
       CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
       // ------------------COUNT QUERY-----------------------
       CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-      Root<Role> countRoleRoot = countQuery.from(Role.class);
+      Root<Permission> countRoleRoot = countQuery.from(Permission.class);
       List<Predicate> countPredicates = new ArrayList<>();
 
       // WHERE DELETED_AT IS NULL.
@@ -113,32 +110,32 @@ public class RoleRepository implements IRole {
 
       // ------------------SELECT QUERY------------------------
       CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<Role> selectRoleRoot = selectQuery.from(Role.class);
-      Join<Role, User> selectJoinWithUser = selectRoleRoot.join("users", JoinType.INNER);
-      Join<Role, Permission> selectJoinWithPermission = selectRoleRoot.join("permissions", JoinType.INNER);
+      Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
+      Join<Permission, Role> selectJoinWithRole = selectPermissionRoot.join("roles", JoinType.INNER);
+      Join<Role, User> selectJoinWithUser = selectPermissionRoot.join("users", JoinType.INNER);
       List<Predicate> selectPredicates = new ArrayList<>();
 
       // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
+      selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
 
       // CASE WHEN SEARCH REQUEST INCLUDED.
       searchRequestPredicate(
           searchRequest,
           countPredicates,
           builder,
-          selectRoleRoot,
+          selectPermissionRoot,
           Arrays.asList("name"));
 
       selectQuery.multiselect(
-          // ROLES SELECTED COLUMNS.
-          selectRoleRoot.get("id").alias("id"),
-          selectRoleRoot.get("name").alias("name"),
-          selectRoleRoot.get("description").alias("description"),
-          selectRoleRoot.get("status").alias("status"),
-          selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
-          selectRoleRoot.get("created_at").alias("created_at"),
-          selectRoleRoot.get("updated_at").alias("updated_at"),
-          selectRoleRoot.get("deleted_at").alias("deleted_at"),
+          // PERMISSIONS SELECTED COLUMNS.
+          selectPermissionRoot.get("id").alias("id"),
+          selectPermissionRoot.get("name").alias("name"),
+          selectPermissionRoot.get("description").alias("description"),
+          selectPermissionRoot.get("status").alias("status"),
+          selectPermissionRoot.get("last_edited_by").alias("last_edited_by"),
+          selectPermissionRoot.get("created_at").alias("created_at"),
+          selectPermissionRoot.get("updated_at").alias("updated_at"),
+          selectPermissionRoot.get("deleted_at").alias("deleted_at"),
 
           // USERS SELECTED COLUMNS.
           selectJoinWithUser.get("id").alias("user_id"),
@@ -152,21 +149,21 @@ public class RoleRepository implements IRole {
           selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
           selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
 
-          // PERMISSION SELECTED COLUMNS.
-          selectJoinWithPermission.get("id").alias("permission_id"),
-          selectJoinWithPermission.get("name").alias("permission_name"),
-          selectJoinWithPermission.get("description").alias("permission_description"),
-          selectJoinWithPermission.get("status").alias("permission_status"))
+          // ROLE SELECTED COLUMNS.
+          selectJoinWithRole.get("id").alias("permission_id"),
+          selectJoinWithRole.get("name").alias("permission_name"),
+          selectJoinWithRole.get("description").alias("permission_description"),
+          selectJoinWithRole.get("status").alias("permission_status"))
           .distinct(true)
           .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
 
       // SORT DATA.
       if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
         selectQuery.orderBy(
-            builder.asc(selectRoleRoot.get(paginationRequest.sortField())));
+            builder.asc(selectPermissionRoot.get(paginationRequest.sortField())));
       } else {
         selectQuery.orderBy(
-            builder.desc(selectRoleRoot.get(paginationRequest.sortField())));
+            builder.desc(selectPermissionRoot.get(paginationRequest.sortField())));
       }
 
       TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
@@ -179,25 +176,25 @@ public class RoleRepository implements IRole {
 
       // CONVERT INTO DTO.
       List<Tuple> result = typedQuery.getResultList();
-      List<RoleJoinDTO> roleJoinWithOthers = result.stream()
-          .map(RoleJoinDTO::fromTuple)
+      List<PermissionJoinDTO> permissionJoinWithOthers = result.stream()
+          .map(PermissionJoinDTO::fromTuple)
           .toList();
 
       // SETUP PAGINATION RESPONSE.
       var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
       var hasNext = paginationRequest.page() < totalPages;
-      PaginationResponse<RoleJoinDTO> resource = new PaginationResponse<>(
-          roleJoinWithOthers,
+      PaginationResponse<PermissionJoinDTO> resource = new PaginationResponse<>(
+          permissionJoinWithOthers,
           totalPages,
           totalElements,
           paginationRequest.size(),
           paginationRequest.page(),
           hasNext);
 
-      ApiResponse<PaginationResponse<RoleJoinDTO>> response = new ApiResponse<>(
+      ApiResponse<PaginationResponse<PermissionJoinDTO>> response = new ApiResponse<>(
           HttpStatus.OK.value(),
           true,
-          "Succesfully fetch roles.",
+          "Succesfully fetch permissions.",
           DateTime.now(),
           httpServletRequest.getRequestURI(),
           resource);
@@ -213,31 +210,31 @@ public class RoleRepository implements IRole {
   }
 
   @Override
-  @Cacheable(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Fetching role entity with ID %s resource...", id));
+  @Cacheable(value = "permissions_cache", key = "#id")
+  public ResponseEntity<ApiResponse<PermissionJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest) {
+    LOG.info(String.format("Fetching permission entity with ID %s resource...", id));
 
     try {
       CriteriaBuilder builder = entityManager.getCriteriaBuilder();
       CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<Role> selectRoleRoot = selectQuery.from(Role.class);
-      Join<Role, User> selectJoinWithUser = selectRoleRoot.join("users", JoinType.INNER);
-      Join<Role, Permission> selectJoinWithPermission = selectRoleRoot.join("permissions", JoinType.INNER);
+      Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
+      Join<Permission, Role> selectJoinWithRole = selectPermissionRoot.join("roles", JoinType.INNER);
+      Join<Role, User> selectJoinWithUser = selectPermissionRoot.join("users", JoinType.INNER);
       List<Predicate> selectPredicates = new ArrayList<>();
 
       // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
+      selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
 
       selectQuery.multiselect(
-          // ROLES SELECTED COLUMNS.
-          selectRoleRoot.get("id").alias("id"),
-          selectRoleRoot.get("name").alias("name"),
-          selectRoleRoot.get("description").alias("description"),
-          selectRoleRoot.get("status").alias("status"),
-          selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
-          selectRoleRoot.get("created_at").alias("created_at"),
-          selectRoleRoot.get("updated_at").alias("updated_at"),
-          selectRoleRoot.get("deleted_at").alias("deleted_at"),
+          // PERMISSIONS SELECTED COLUMNS.
+          selectPermissionRoot.get("id").alias("id"),
+          selectPermissionRoot.get("name").alias("name"),
+          selectPermissionRoot.get("description").alias("description"),
+          selectPermissionRoot.get("status").alias("status"),
+          selectPermissionRoot.get("last_edited_by").alias("last_edited_by"),
+          selectPermissionRoot.get("created_at").alias("created_at"),
+          selectPermissionRoot.get("updated_at").alias("updated_at"),
+          selectPermissionRoot.get("deleted_at").alias("deleted_at"),
 
           // USERS SELECTED COLUMNS.
           selectJoinWithUser.get("id").alias("user_id"),
@@ -249,23 +246,25 @@ public class RoleRepository implements IRole {
           selectJoinWithUser.get("account_status").alias("user_account_status"),
           selectJoinWithUser.get("active_status").alias("user_active_status"),
           selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
+          selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
 
-          // PERMISSION SELECTED COLUMNS.
-          selectJoinWithPermission.get("id").alias("permission_id"),
-          selectJoinWithPermission.get("name").alias("permission_name"),
-          selectJoinWithPermission.get("description").alias("permission_description"),
-          selectJoinWithPermission.get("status").alias("permission_status"))
+          // ROLE SELECTED COLUMNS.
+          selectJoinWithRole.get("id").alias("permission_id"),
+          selectJoinWithRole.get("name").alias("permission_name"),
+          selectJoinWithRole.get("description").alias("permission_description"),
+          selectJoinWithRole.get("status").alias("permission_status"))
           .distinct(true)
           .where(builder.and(
               builder.and(selectPredicates.toArray(Predicate[]::new)),
-              builder.equal(selectRoleRoot.get("id"), id)));
+              builder.equal(selectPermissionRoot.get("id"), id)));
 
       // CONVERT INTO DTO.
       TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-      RoleJoinDTO resource = RoleJoinDTO.fromTuple(typedQuery.getSingleResult());
+      PermissionJoinDTO resource = PermissionJoinDTO.fromTuple(typedQuery.getSingleResult());
 
-      ApiResponse<RoleJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-          String.format("Successfully fetch role with ID %s", id), DateTime.now(), httpServletRequest.getRequestURI(),
+      ApiResponse<PermissionJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
+          String.format("Successfully fetch permission with ID %s", id), DateTime.now(),
+          httpServletRequest.getRequestURI(),
           resource);
 
       LOG.info(response.message());
@@ -280,23 +279,24 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CachePut(value = "roles_cache", key = "#result.resource.id")
-  public ResponseEntity<ApiResponse<Role>> save(CreateRoleRequest createRoleRequest,
-      HttpServletRequest httpServletRequest) {
+  @CachePut(value = "permissions_cache", key = "#result.resource.id")
+  public ResponseEntity<ApiResponse<Permission>> save(
+      CreatePermissionRequest createPermissionRequest, HttpServletRequest httpServletRequest) {
     LOG.info("Creating new role...");
 
-    Role role = new Role();
-    role.setName(createRoleRequest.name());
-    role.setDescription(createRoleRequest.description());
-    role.setStatus(RoleStatus.ACTIVE.toString().toLowerCase());
+    Permission permission = new Permission();
+    permission.setName(createPermissionRequest.name());
+    permission.setDescription(createPermissionRequest.description());
+    permission.setStatus(RoleStatus.ACTIVE.toString().toLowerCase());
 
-    entityManager.persist(role);
+    entityManager.persist(permission);
     entityManager.flush();
 
-    ApiResponse<Role> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully add new role.",
+    ApiResponse<Permission> response = new ApiResponse<>(HttpStatus.OK.value(), true,
+        "Successfully add new permission.",
         DateTime.now(),
         httpServletRequest.getRequestURI(),
-        role);
+        permission);
 
     LOG.info(response.message());
 
@@ -305,10 +305,10 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> update(String id, UpdateRoleRequest updateRoleRequest,
+  @CacheEvict(value = "permissions_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> update(String id, UpdatePermissionRequest updatePermissionRequest,
       HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Updating role entity with ID %s...", id));
+    LOG.info(String.format("Updating permission entity with ID %s...", id));
 
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -329,28 +329,28 @@ public class RoleRepository implements IRole {
     var data = UserDTO.fromObject(user);
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-    CriteriaUpdate<Role> criteriaUpdate = builder.createCriteriaUpdate(Role.class);
-    Root<Role> roleRoot = criteriaUpdate.from(Role.class);
+    CriteriaUpdate<Permission> criteriaUpdate = builder.createCriteriaUpdate(Permission.class);
+    Root<Permission> permissionRoot = criteriaUpdate.from(Permission.class);
 
-    criteriaUpdate.set("name", updateRoleRequest.name());
-    criteriaUpdate.set("description", updateRoleRequest.description());
-    criteriaUpdate.set("status", updateRoleRequest.status());
+    criteriaUpdate.set("name", updatePermissionRequest.name());
+    criteriaUpdate.set("description", updatePermissionRequest.description());
+    criteriaUpdate.set("status", updatePermissionRequest.status());
     criteriaUpdate.set("last_edited_by", data.id());
     criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-    criteriaUpdate.where(builder.equal(roleRoot.get("id"), id));
+    criteriaUpdate.where(builder.equal(permissionRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
     if (updated != 1) {
-      LOG.error(String.format("role with ID %s not found.", id));
+      LOG.error(String.format("permission with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("role with ID %s not found.", id));
+      throw new ResourceNotFoundException(String.format("permission with ID %s not found.", id));
     }
 
     entityManager.flush();
     entityManager.clear();
 
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully update role entity with ID %s.", id),
+        String.format("Successfully update permission entity with ID %s.", id),
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
 
     LOG.info(response.message());
@@ -360,9 +360,9 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @CacheEvict(value = "permissions_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Restoring role entity with ID %s...", id));
+    LOG.info(String.format("Restoring permission entity with ID %s...", id));
 
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -383,29 +383,29 @@ public class RoleRepository implements IRole {
     var data = UserDTO.fromObject(user);
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-    CriteriaUpdate<Role> criteriaUpdate = builder.createCriteriaUpdate(Role.class);
-    Root<Role> roleRoot = criteriaUpdate.from(Role.class);
+    CriteriaUpdate<Permission> criteriaUpdate = builder.createCriteriaUpdate(Permission.class);
+    Root<Permission> permissionRoot = criteriaUpdate.from(Permission.class);
 
     criteriaUpdate.set("deleted_at", null);
     criteriaUpdate.set("status", RoleStatus.ACTIVE.toString().toLowerCase());
     criteriaUpdate.set("last_edited_by", data.id());
     criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.and(
-        builder.equal(roleRoot.get("id"), id),
-        builder.isNotNull(roleRoot.get("deleted_at"))));
+        builder.equal(permissionRoot.get("id"), id),
+        builder.isNotNull(permissionRoot.get("deleted_at"))));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
     if (updated != 1) {
-      LOG.error(String.format("role with ID %s not found or is not deleted.", id));
+      LOG.error(String.format("permission with ID %s not found or is not deleted.", id));
 
-      throw new ResourceNotFoundException(String.format("role with ID %s not found or is not deleted.", id));
+      throw new ResourceNotFoundException(String.format("permission with ID %s not found or is not deleted.", id));
     }
 
     entityManager.flush();
     entityManager.clear();
 
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully restore role entity with ID %s", id),
+        String.format("Successfully restore permission entity with ID %s", id),
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
 
     LOG.info(response.message());
@@ -415,9 +415,9 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @CacheEvict(value = "permissions_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Soft deleting role entity with ID %s...", id));
+    LOG.info(String.format("Soft deleting permission entity with ID %s...", id));
 
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -438,27 +438,27 @@ public class RoleRepository implements IRole {
     var data = UserDTO.fromObject(user);
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-    CriteriaUpdate<Role> criteriaUpdate = builder.createCriteriaUpdate(Role.class);
-    Root<Role> roleRoot = criteriaUpdate.from(Role.class);
+    CriteriaUpdate<Permission> criteriaUpdate = builder.createCriteriaUpdate(Permission.class);
+    Root<Permission> permissionRoot = criteriaUpdate.from(Permission.class);
 
     criteriaUpdate.set("deleted_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.set("status", RoleStatus.DELETED.toString().toLowerCase());
     criteriaUpdate.set("last_edited_by", data.id());
     criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
-    criteriaUpdate.where(builder.equal(roleRoot.get("id"), id));
+    criteriaUpdate.where(builder.equal(permissionRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
     if (updated != 1) {
-      LOG.error(String.format("role with ID %s not found.", id));
+      LOG.error(String.format("permission with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("role with ID %s not found.", id));
+      throw new ResourceNotFoundException(String.format("permission with ID %s not found.", id));
     }
 
     entityManager.flush();
     entityManager.clear();
 
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully soft delete role with ID %s", id),
+        String.format("Successfully soft delete permission with ID %s", id),
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
 
     LOG.info(response.message());
@@ -468,28 +468,28 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @CacheEvict(value = "permissions_cache", key = "#id")
   public ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Force deleting role entity with ID %s...", id));
+    LOG.info(String.format("Force deleting permission entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-    CriteriaDelete<Role> criteriaDelete = builder.createCriteriaDelete(Role.class);
-    Root<Role> roleRoot = criteriaDelete.from(Role.class);
+    CriteriaDelete<Permission> criteriaDelete = builder.createCriteriaDelete(Permission.class);
+    Root<Permission> permissionRoot = criteriaDelete.from(Permission.class);
 
-    criteriaDelete.where(builder.equal(roleRoot.get("id"), id));
+    criteriaDelete.where(builder.equal(permissionRoot.get("id"), id));
 
     int deletedCount = entityManager.createQuery(criteriaDelete).executeUpdate();
     if (deletedCount != 1) {
-      LOG.error(String.format("role with ID %s not found.", id));
+      LOG.error(String.format("permission with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("role with id %s not found.", id));
+      throw new ResourceNotFoundException(String.format("permission with id %s not found.", id));
     }
 
     entityManager.flush();
     entityManager.clear();
 
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully force delete role entity with ID %s", id),
+        String.format("Successfully force delete permission entity with ID %s", id),
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
 
     LOG.info(response.message());

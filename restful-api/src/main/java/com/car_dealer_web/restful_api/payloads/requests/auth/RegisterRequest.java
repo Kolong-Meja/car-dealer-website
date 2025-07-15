@@ -15,17 +15,17 @@ public record RegisterRequest(
     String phone_number,
     String address) {
   public RegisterRequest(
-      @Size(max = 100) @NotBlank(message = "fullname cannot be blank.") String fullname,
+      @Size(max = 150) @NotBlank(message = "fullname cannot be blank.") String fullname,
 
-      @Size(max = 250) @NotBlank(message = "bio cannot be blank.") String bio,
+      @Size(max = 2048) @NotBlank(message = "bio cannot be blank.") String bio,
 
-      @Size(max = 100) @Email(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "email is not valid.") @NotBlank(message = "email cannot be blank.") String email,
+      @Size(max = 150) @Email(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "email is not valid.") @NotBlank(message = "email cannot be blank.") String email,
 
       @Size(min = 8, max = 100) @Pattern(regexp = "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$", message = "password is not valid.") @NotBlank(message = "password cannot be blank.") String password,
 
       @Size(max = 16) @Pattern(regexp = "^\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}$", message = "phone number is not valid.") @NotBlank(message = "phone number cannot be blank.") String phone_number,
 
-      @Size(min = 20, max = 250) @NotBlank(message = "address cannot be blank.") String address) {
+      @Size(min = 20, max = 512) @NotBlank(message = "address cannot be blank.") String address) {
     this.fullname = Objects.requireNonNull(fullname, "fullname cannot be null.");
     this.bio = Objects.requireNonNull(bio, "bio cannot be null.");
     this.email = Objects.requireNonNull(email, "email cannot be null.");

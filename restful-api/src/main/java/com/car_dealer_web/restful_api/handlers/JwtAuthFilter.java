@@ -26,7 +26,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
   private static final List<String> WHITELIST_API_PATH = List.of(
       "/v1/auth/login",
-      "/v1/auth/register");
+      "/v1/auth/register"
+      );
 
   public JwtAuthFilter(
       UserDetailsService userDetailsService,

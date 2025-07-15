@@ -19,11 +19,13 @@ import org.springframework.stereotype.Repository;
 
 import com.car_dealer_web.restful_api.dtos.UserDTO;
 import com.car_dealer_web.restful_api.dtos.joins.UserJoinDTO;
+import com.car_dealer_web.restful_api.exceptions.AccessDeniedException;
 import com.car_dealer_web.restful_api.exceptions.BadRequestException;
 import com.car_dealer_web.restful_api.exceptions.ResourceNotFoundException;
 import com.car_dealer_web.restful_api.exceptions.UnauthorizedException;
 import com.car_dealer_web.restful_api.handlers.JwtAuthHandler;
 import com.car_dealer_web.restful_api.interfaces.IUser;
+import com.car_dealer_web.restful_api.models.Permission;
 import com.car_dealer_web.restful_api.models.Role;
 import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
@@ -109,6 +111,7 @@ public class UserRepository implements IUser {
       CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
       Root<User> selectUserRoot = selectQuery.from(User.class);
       Join<User, Role> selectJoinWithRole = selectUserRoot.join("roles", JoinType.INNER);
+      Join<Role, Permission> selectJoinWithPermission = selectUserRoot.join("permissions", JoinType.INNER);
       List<Predicate> selectPredicates = new ArrayList<>();
 
       // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
@@ -143,7 +146,13 @@ public class UserRepository implements IUser {
           selectJoinWithRole.get("id").alias("role_id"),
           selectJoinWithRole.get("name").alias("role_name"),
           selectJoinWithRole.get("description").alias("role_description"),
-          selectJoinWithRole.get("status").alias("role_status"))
+          selectJoinWithRole.get("status").alias("role_status"),
+
+          // PERMISSION SELECTED COLUMNS
+          selectJoinWithPermission.get("id").alias("permission_id"),
+          selectJoinWithPermission.get("name").alias("permission_name"),
+          selectJoinWithPermission.get("description").alias("permission_description"),
+          selectJoinWithPermission.get("status").alias("permission_status"))
           .distinct(true)
           .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
 
@@ -209,6 +218,7 @@ public class UserRepository implements IUser {
       CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
       Root<User> selectUserRoot = selectQuery.from(User.class);
       Join<User, Role> selectJoinWithRole = selectUserRoot.join("roles", JoinType.INNER);
+      Join<Role, Permission> selectJoinWithPermission = selectUserRoot.join("permissions", JoinType.INNER);
       List<Predicate> selectPredicates = new ArrayList<>();
 
       // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
@@ -238,7 +248,13 @@ public class UserRepository implements IUser {
           selectJoinWithRole.get("id").alias("role_id"),
           selectJoinWithRole.get("name").alias("role_name"),
           selectJoinWithRole.get("description").alias("role_description"),
-          selectJoinWithRole.get("status").alias("role_status"))
+          selectJoinWithRole.get("status").alias("role_status"),
+
+          // PERMISSION SELECTED COLUMNS
+          selectJoinWithPermission.get("id").alias("permission_id"),
+          selectJoinWithPermission.get("name").alias("permission_name"),
+          selectJoinWithPermission.get("description").alias("permission_description"),
+          selectJoinWithPermission.get("status").alias("permission_status"))
           .distinct(true)
           .where(builder.and(
               builder.and(selectPredicates.toArray(Predicate[]::new)),
@@ -288,6 +304,11 @@ public class UserRepository implements IUser {
     }
 
     var data = UserDTO.fromObject(user);
+
+    if (!data.id().equals(id)) {
+      throw new AccessDeniedException(
+          "Access denied. You don't have permission to access this resource.");
+    }
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaUpdate<User> criteriaUpdate = builder.createCriteriaUpdate(User.class);
@@ -431,7 +452,7 @@ public class UserRepository implements IUser {
           .where(builder.equal(userRoot.get("email"), email));
 
       userRoot.fetch("roles", JoinType.INNER);
-      
+
       TypedQuery<User> typedQuery = entityManager.createQuery(selectQuery);
       var result = typedQuery.getSingleResult();
 

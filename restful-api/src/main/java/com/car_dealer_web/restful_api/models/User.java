@@ -47,20 +47,19 @@ public class User implements UserDetails {
   @Column(name = "id", length = 20, nullable = false)
   private String id;
 
-  @Size(max = 100)
+  @Size(max = 150)
   @NotBlank(message = "fullname cannot be blank.")
-  @Column(name = "fullname", length = 100, nullable = false)
+  @Column(name = "fullname", length = 150, nullable = false)
   private String fullname;
 
-  @Size(max = 250)
-  @NotBlank(message = "bio cannot be blank.")
-  @Column(name = "bio", length = 250, nullable = true)
+  @Size(max = 2048)
+  @Column(name = "bio", columnDefinition = "TEXT", nullable = true)
   private String bio;
 
-  @Size(max = 100)
+  @Size(max = 150)
   @Email(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "email is not valid.")
   @NotBlank(message = "email cannot be blank.")
-  @Column(name = "email", length = 100, nullable = false, unique = true)
+  @Column(name = "email", length = 150, nullable = false, unique = true)
   private String email;
 
   @Size(min = 8, max = 100)
@@ -75,9 +74,9 @@ public class User implements UserDetails {
   @Column(name = "phone_number", length = 16, nullable = false, unique = true)
   private String phone_number;
 
-  @Size(min = 20, max = 250)
+  @Size(min = 20, max = 512)
   @NotBlank(message = "address cannot be blank.")
-  @Column(name = "address", length = 250, nullable = true)
+  @Column(name = "address", columnDefinition = "TEXT", nullable = true)
   private String address;
 
   @Size(max = 20)

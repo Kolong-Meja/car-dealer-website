@@ -2,6 +2,7 @@ package com.car_dealer_web.restful_api.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -41,6 +42,9 @@ public class SecurityConfig {
         .permitAll()
         .requestMatchers("/v1/admin/**")
         .hasAnyRole("admin", "super admin")
+        .requestMatchers(HttpMethod.DELETE, "/v1/users/*").hasAnyRole("admin", "super admin")
+        .requestMatchers("/v1/**/**/force")
+        .hasRole("super admin")
         .anyRequest()
         .authenticated())
         .csrf(csrf -> csrf.disable())

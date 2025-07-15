@@ -17,19 +17,17 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Entity
-@Table(name = "roles", indexes = {
+@Table(name = "permissions", indexes = {
     @Index(name = "name_idx", columnList = "name"),
     @Index(name = "status_idx", columnList = "status")
 })
-public class Role {
+public class Permission {
   @Id
   @Cuid
   @GeneratedValue(generator = "cuid")
@@ -38,9 +36,9 @@ public class Role {
   @Column(name = "id", length = 20, nullable = false)
   private String id;
 
-  @Size(max = 50)
+  @Size(max = 100)
   @NotBlank(message = "name cannot be blank.")
-  @Column(name = "name", length = 50, nullable = false)
+  @Column(name = "name", length = 100, nullable = false)
   private String name;
 
   @Size(max = 512)
@@ -68,20 +66,13 @@ public class Role {
   @ManyToMany(fetch = FetchType.LAZY, cascade = {
       CascadeType.PERSIST,
       CascadeType.MERGE
-  }, mappedBy = "roles")
-  private Set<User> users;
+  }, mappedBy = "permissions")
+  private Set<Role> roles;
 
-  @ManyToMany(fetch = FetchType.LAZY, cascade = {
-      CascadeType.PERSIST,
-      CascadeType.MERGE
-  })
-  @JoinTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id", nullable = false), inverseJoinColumns = @JoinColumn(name = "permission_id", nullable = false))
-  private Set<Permission> permissions;
-
-  public Role() {
+  public Permission() {
   }
 
-  public Role(
+  public Permission(
       String id,
       String name,
       String description,
@@ -133,12 +124,8 @@ public class Role {
     return deleted_at;
   }
 
-  public Set<User> getUsers() {
-    return users;
-  }
-
-  public Set<Permission> getPermissions() {
-    return permissions;
+  public Set<Role> getRoles() {
+    return roles;
   }
 
   // SETTERS
@@ -174,12 +161,8 @@ public class Role {
     this.deleted_at = value;
   }
 
-  public void setUsers(Set<User> values) {
-    this.users = values;
-  }
-
-  public void setPermissions(Set<Permission> values) {
-    this.permissions = values;
+  public void setRoles(Set<Role> values) {
+    this.roles = values;
   }
 
   @Override
@@ -189,15 +172,15 @@ public class Role {
     if (obj == null || getClass() != obj.getClass())
       return false;
 
-    Role role = (Role) obj;
-    return Objects.equals(id, role.id)
-        && Objects.equals(name, role.name)
-        && Objects.equals(description, role.description)
-        && Objects.equals(status, role.status)
-        && Objects.equals(last_edited_by, role.last_edited_by)
-        && Objects.equals(created_at, role.created_at)
-        && Objects.equals(updated_at, role.updated_at)
-        && Objects.equals(deleted_at, role.deleted_at);
+    Permission permission = (Permission) obj;
+    return Objects.equals(id, permission.id)
+        && Objects.equals(name, permission.name)
+        && Objects.equals(description, permission.description)
+        && Objects.equals(status, permission.status)
+        && Objects.equals(last_edited_by, permission.last_edited_by)
+        && Objects.equals(created_at, permission.created_at)
+        && Objects.equals(updated_at, permission.updated_at)
+        && Objects.equals(deleted_at, permission.deleted_at);
   }
 
   @Override
@@ -215,7 +198,7 @@ public class Role {
 
   @Override
   public String toString() {
-    return "Role{" +
+    return "Permission{" +
         "id=" + id +
         ", name=" + name +
         ", description=" + description +
