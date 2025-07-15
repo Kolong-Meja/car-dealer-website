@@ -127,7 +127,7 @@ public class AuthRepository implements IAuth {
     resource.put("type", "bearer");
 
     // SETUP THE API (JSON) RESPONSE.
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully registering new user.",
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.CREATED.value(), true, "Successfully registering new user.",
         DateTime.now(),
         httpServletRequest.getRequestURI(),
         resource);

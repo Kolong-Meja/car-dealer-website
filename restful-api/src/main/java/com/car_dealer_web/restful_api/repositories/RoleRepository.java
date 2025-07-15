@@ -4,9 +4,12 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
@@ -31,7 +34,10 @@ import com.car_dealer_web.restful_api.models.Role;
 import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
+import com.car_dealer_web.restful_api.payloads.requests.roles.AttachPermissionsRequest;
 import com.car_dealer_web.restful_api.payloads.requests.roles.CreateRoleRequest;
+import com.car_dealer_web.restful_api.payloads.requests.roles.DetachPermissionsRequest;
+import com.car_dealer_web.restful_api.payloads.requests.roles.SyncPermissionsRequest;
 import com.car_dealer_web.restful_api.payloads.requests.roles.UpdateRoleRequest;
 import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
@@ -293,7 +299,7 @@ public class RoleRepository implements IRole {
     entityManager.persist(role);
     entityManager.flush();
 
-    ApiResponse<Role> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully add new role.",
+    ApiResponse<Role> response = new ApiResponse<>(HttpStatus.CREATED.value(), true, "Successfully add new role.",
         DateTime.now(),
         httpServletRequest.getRequestURI(),
         role);
@@ -491,6 +497,151 @@ public class RoleRepository implements IRole {
     ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
         String.format("Successfully force delete role entity with ID %s", id),
         DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
+
+    LOG.info(response.message());
+
+    return new ResponseEntity<>(response, HttpStatus.OK);
+  }
+
+  @Override
+  @Transactional
+  @CacheEvict(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> attachPermissions(String id,
+      AttachPermissionsRequest attachPermissionsRequest, HttpServletRequest httpServletRequest) {
+    LOG.info("Attaching relation with permissions...");
+
+    Role role = entityManager.find(Role.class, id);
+
+    if (role == null) {
+      LOG.error("Role not found.", ResourceNotFoundException.class);
+
+      throw new ResourceNotFoundException("Role not found.");
+    }
+
+    Hibernate.initialize(role.getPermissions());
+
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Permission> selectPermissionQuery = builder.createQuery(Permission.class);
+    Root<Permission> selectPermissionRoot = selectPermissionQuery.from(Permission.class);
+
+    List<Predicate> selectPredicates = new ArrayList<>();
+    selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
+
+    selectPermissionQuery.select(selectPermissionRoot)
+        .where(selectPermissionRoot.get("id").in(attachPermissionsRequest.permissionIds()));
+
+    List<Permission> permissions = entityManager.createQuery(selectPermissionQuery).getResultList();
+
+    if (permissions.size() != attachPermissionsRequest.permissionIds().size()) {
+      LOG.error("No single permissions found.", BadRequestException.class);
+
+      throw new BadRequestException("No single permissions found.");
+    }
+
+    Set<Permission> selectedPermissions = new HashSet<>(permissions);
+
+    for (Permission permission : selectedPermissions) {
+      if (!role.getPermissions().contains(permission)) {
+        role.getPermissions().add(permission);
+      }
+    }
+
+    entityManager.persist(role);
+    entityManager.flush();
+
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
+        "Successfully attach relation with selected permissions.",
+        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", attachPermissionsRequest.permissionIds()));
+
+    LOG.info(response.message());
+
+    return new ResponseEntity<>(response, HttpStatus.OK);
+  }
+
+  @Override
+  @Transactional
+  @CacheEvict(value = "roles_cache", key = "#id")
+  public ResponseEntity<ApiResponse<Object>> detachPermissions(String id,
+      DetachPermissionsRequest detachPermissionsRequest, HttpServletRequest httpServletRequest) {
+    LOG.info("Detaching relation with permissions...");
+
+    Role role = entityManager.find(Role.class, id);
+
+    if (role == null) {
+      LOG.error("Role not found.", ResourceNotFoundException.class);
+
+      throw new ResourceNotFoundException("Role not found.");
+    }
+
+    Hibernate.initialize(role.getPermissions());
+
+    boolean isDetached = role.getPermissions()
+        .removeIf(permission -> detachPermissionsRequest.permissionIds().contains(permission.getId()));
+
+    if (!isDetached) {
+      LOG.error("No matching permissions to detach.", BadRequestException.class);
+
+      throw new BadRequestException("No matching permissions to detach.");
+    }
+
+    entityManager.merge(role);
+    entityManager.flush();
+    entityManager.clear();
+
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
+        "Successfully detach relation with selected permissions.",
+        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", detachPermissionsRequest.permissionIds()));
+
+    LOG.info(response.message());
+
+    return new ResponseEntity<>(response, HttpStatus.OK);
+  }
+
+  @Override
+  public ResponseEntity<ApiResponse<Object>> syncPermissions(String id,
+      SyncPermissionsRequest syncPermissionsRequest, HttpServletRequest httpServletRequest) {
+    LOG.info("Attaching relation with permissions...");
+
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+
+    // CHECK THE PERMISSION IDS FIRST.
+    CriteriaQuery<Permission> selectPermissionQuery = builder.createQuery(Permission.class);
+    Root<Permission> selectPermissionRoot = selectPermissionQuery.from(Permission.class);
+
+    List<Predicate> selectPredicates = new ArrayList<>();
+    selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
+
+    selectPermissionQuery.select(selectPermissionRoot)
+        .where(selectPermissionRoot.get("id").in(syncPermissionsRequest.permissionIds()));
+
+    List<Permission> permissions = entityManager.createQuery(selectPermissionQuery).getResultList();
+
+    if (permissions.size() != syncPermissionsRequest.permissionIds().size()) {
+      LOG.error("No single permissions found.", BadRequestException.class);
+
+      throw new BadRequestException("No single permissions found.");
+    }
+
+    Set<Permission> selectedPermissions = new HashSet<>(permissions);
+
+    // ATTACH THE RELATIONS.
+    Role role = entityManager.find(Role.class, id);
+
+    if (role == null) {
+      LOG.error("Role not found.", ResourceNotFoundException.class);
+
+      throw new ResourceNotFoundException("Role not found.");
+    }
+
+    role.setPermissions(selectedPermissions);
+
+    entityManager.merge(role);
+    entityManager.flush();
+    entityManager.clear();
+
+    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
+        "Successfully attach relation with selected permissions.",
+        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", syncPermissionsRequest.permissionIds()));
 
     LOG.info(response.message());
 

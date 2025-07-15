@@ -1,0 +1,14 @@
+package com.car_dealer_web.restful_api.payloads.requests.permissions;
+
+import java.util.List;
+import java.util.Objects;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record AttachRolesRequest(List<String> roleIds) {
+  public AttachRolesRequest(
+      List<@Size(max = 20) @NotBlank(message = "permission id cannot be blank.") String> roleIds) {
+    this.roleIds = Objects.requireNonNull(roleIds, "permission id cannot be null.");
+  }
+}

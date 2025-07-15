@@ -6,7 +6,10 @@ import com.car_dealer_web.restful_api.dtos.joins.PermissionJoinDTO;
 import com.car_dealer_web.restful_api.models.Permission;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
+import com.car_dealer_web.restful_api.payloads.requests.permissions.AttachRolesRequest;
 import com.car_dealer_web.restful_api.payloads.requests.permissions.CreatePermissionRequest;
+import com.car_dealer_web.restful_api.payloads.requests.permissions.DetachRolesRequest;
+import com.car_dealer_web.restful_api.payloads.requests.permissions.SyncRolesRequest;
 import com.car_dealer_web.restful_api.payloads.requests.permissions.UpdatePermissionRequest;
 import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
@@ -30,4 +33,13 @@ public interface IPermission {
   ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest);
 
   ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest);
+
+  ResponseEntity<ApiResponse<Object>> attachRoles(String id, AttachRolesRequest attachRolesRequest,
+      HttpServletRequest httpServletRequest);
+
+  ResponseEntity<ApiResponse<Object>> detachRoles(String id, DetachRolesRequest detachRolesRequest,
+      HttpServletRequest httpServletRequest);
+
+  ResponseEntity<ApiResponse<Object>> syncRoles(String id, SyncRolesRequest syncRolesRequest,
+      HttpServletRequest httpServletRequest);
 }
