@@ -9,5 +9,5 @@ create table permissions (
   deleted_at timestamptz
 );
 
-create index name_idx on permissions(name);
-create index status_idx on permissions(status);
+create index permission_name_idx on permissions(name);
+create index permission_status_idx on permissions(status);

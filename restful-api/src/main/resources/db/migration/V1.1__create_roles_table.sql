@@ -9,5 +9,5 @@ create table roles (
   deleted_at timestamptz
 );
 
-create index name_idx on roles(name);
-create index status_idx on roles(status);
+create index role_name_idx on roles(name);
+create index role_status_idx on roles(status);

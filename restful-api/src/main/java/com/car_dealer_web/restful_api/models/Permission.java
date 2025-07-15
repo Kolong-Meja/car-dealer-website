@@ -24,8 +24,8 @@ import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "permissions", indexes = {
-    @Index(name = "name_idx", columnList = "name"),
-    @Index(name = "status_idx", columnList = "status")
+    @Index(name = "permission_name_idx", columnList = "name"),
+    @Index(name = "permission_status_idx", columnList = "status")
 })
 public class Permission {
   @Id

@@ -33,10 +33,10 @@ import jakarta.persistence.ManyToMany;
 
 @Entity
 @Table(name = "users", indexes = {
-    @Index(name = "fullname_idx", columnList = "fullname"),
-    @Index(name = "email_idx", columnList = "email"),
-    @Index(name = "phone_number_idx", columnList = "phone_number"),
-    @Index(name = "account_status_idx", columnList = "account_status")
+    @Index(name = "user_fullname_idx", columnList = "fullname"),
+    @Index(name = "user_email_idx", columnList = "email"),
+    @Index(name = "user_phone_number_idx", columnList = "phone_number"),
+    @Index(name = "user_account_status_idx", columnList = "account_status")
 })
 public class User implements UserDetails {
   @Id

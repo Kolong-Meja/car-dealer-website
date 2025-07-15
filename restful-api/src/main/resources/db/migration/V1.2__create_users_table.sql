@@ -20,7 +20,7 @@ create table users (
 comment on column users.bio is 'User biography.';
 comment on column users.avatar_url is 'User avatar or image URL link.';
 
-create index fullname_idx on users(fullname);
-create index email_idx on users(email);
-create index phone_number_idx on users(phone_number);
-create index account_status_idx on users(account_status);
+create index user_fullname_idx on users(fullname);
+create index user_email_idx on users(email);
+create index user_phone_number_idx on users(phone_number);
+create index user_account_status_idx on users(account_status);
