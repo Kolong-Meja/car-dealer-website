@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.car_dealer_web.restful_api.annotations.RateLimit;
-import com.car_dealer_web.restful_api.dtos.joins.PermissionJoinDTO;
-import com.car_dealer_web.restful_api.interfaces.IPermission;
+import com.car_dealer_web.restful_api.dtos.permissions.PermissionJoinDTO;
+import com.car_dealer_web.restful_api.dtos.permissions.PermissionWithRolesDTO;
+import com.car_dealer_web.restful_api.interfaces.IPermissionService;
 import com.car_dealer_web.restful_api.models.Permission;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
@@ -32,81 +33,123 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/v1/permissions")
 public class PermissionController {
-  private final IPermission iPermission;
+  private final IPermissionService iPermissionService;
 
-  public PermissionController(IPermission iPermission) {
-    this.iPermission = iPermission;
+  public PermissionController(IPermissionService iPermissionService) {
+    this.iPermissionService = iPermissionService;
   }
 
-  @GetMapping("/")
   @RateLimit
+  @GetMapping("/")
   public ResponseEntity<ApiResponse<PaginationResponse<PermissionJoinDTO>>> findAll(
       @RequestParam(value = "q", required = false) SearchRequest searchRequest,
-      @RequestParam(required = false) PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
-    return iPermission.findAll(searchRequest, paginationRequest, httpServletRequest);
-  }
-
-  @GetMapping("/{id}")
-  @RateLimit
-  public ResponseEntity<ApiResponse<PermissionJoinDTO>> findOne(@PathVariable String id,
+      @RequestParam(required = false) PaginationRequest paginationRequest,
       HttpServletRequest httpServletRequest) {
-    return iPermission.findOne(id, httpServletRequest);
+    ApiResponse<PaginationResponse<PermissionJoinDTO>> result = iPermissionService.getAllPermissions(searchRequest,
+        paginationRequest, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
-  @PostMapping("/")
   @RateLimit
+  @GetMapping("/{id}")
+  public ResponseEntity<ApiResponse<PermissionJoinDTO>> findOne(
+      @PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    ApiResponse<PermissionJoinDTO> result = iPermissionService.getOnePermission(id,
+        httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
+  }
+
+  @RateLimit
+  @PostMapping("/")
   public ResponseEntity<ApiResponse<Permission>> save(
       @Valid @RequestBody(required = true) CreatePermissionRequest createPermissionRequest,
       HttpServletRequest httpServletRequest) {
-    return iPermission.save(createPermissionRequest, httpServletRequest);
+    ApiResponse<Permission> result = iPermissionService.createNewPermission(
+        createPermissionRequest,
+        httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
-  @PatchMapping("/{id}")
   @RateLimit
-  public ResponseEntity<ApiResponse<Object>> update(@PathVariable String id,
+  @PatchMapping("/{id}")
+  public ResponseEntity<ApiResponse<Object>> update(
+      @PathVariable String id,
       @Valid @RequestBody(required = false) UpdatePermissionRequest updatePermissionRequest,
       HttpServletRequest httpServletRequest) {
-    return iPermission.update(id, updatePermissionRequest, httpServletRequest);
+    ApiResponse<Object> result = iPermissionService.modifyPermission(id, updatePermissionRequest, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
   @PatchMapping("/{id}/restore")
-  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id, HttpServletRequest httpServletRequest) {
-    return iPermission.restore(id, httpServletRequest);
+  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    ApiResponse<Object> result = iPermissionService.restorePermission(id, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id, HttpServletRequest httpServletRequest) {
-    return iPermission.delete(id, httpServletRequest);
+  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    ApiResponse<Object> result = iPermissionService.deletePermission(id, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
   @DeleteMapping("/{id}/force")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> forceDelete(
+      @PathVariable String id,
       HttpServletRequest httpServletRequest) {
-    return iPermission.forceDelete(id, httpServletRequest);
+    ApiResponse<Object> result = iPermissionService.forceDeletePermission(id, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
+  @RateLimit
   @GetMapping("/{id}/roles")
-  public void fetchRoles() {
+  public ResponseEntity<ApiResponse<PermissionWithRolesDTO>> fetchRoles(
+      @PathVariable String id,
+      HttpServletRequest httpServletRequest) {
+    ApiResponse<PermissionWithRolesDTO> result = iPermissionService.getOnePermissionWithRoles(id, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
   @PostMapping("/{id}/roles")
-  public ResponseEntity<ApiResponse<Object>> attachRoles(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> attachRoles(
+      @PathVariable String id,
       @Valid @RequestBody(required = true) AttachRolesRequest attachRolesRequest,
       HttpServletRequest httpServletRequest) {
-    return iPermission.attachRoles(id, attachRolesRequest, httpServletRequest);
+    ApiResponse<Object> result = iPermissionService.attachOnePermissionWithRoles(id, attachRolesRequest,
+        httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
   @PutMapping("/{id}/roles/detach")
-  public ResponseEntity<ApiResponse<Object>> detachRoles(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> detachRoles(
+      @PathVariable String id,
       @Valid @RequestBody(required = true) DetachRolesRequest detachRolesRequest,
       HttpServletRequest httpServletRequest) {
-    return iPermission.detachRoles(id, detachRolesRequest, httpServletRequest);
+    ApiResponse<Object> result = iPermissionService.detachOnePermissionWithRoles(id, detachRolesRequest,
+        httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
   @PutMapping("/{id}/roles")
-  public ResponseEntity<ApiResponse<Object>> syncRoles(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> syncRoles(
+      @PathVariable String id,
       @Valid @RequestBody(required = true) SyncRolesRequest syncRolesRequest,
       HttpServletRequest httpServletRequest) {
-    return iPermission.syncRoles(id, syncRolesRequest, httpServletRequest);
+    ApiResponse<Object> result = iPermissionService.syncOnePermissionWithRoles(id, syncRolesRequest,
+        httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 }

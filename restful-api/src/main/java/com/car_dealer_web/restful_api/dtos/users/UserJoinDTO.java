@@ -1,4 +1,4 @@
-package com.car_dealer_web.restful_api.dtos.joins;
+package com.car_dealer_web.restful_api.dtos.users;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

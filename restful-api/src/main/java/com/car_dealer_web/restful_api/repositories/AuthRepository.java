@@ -22,7 +22,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
-import com.car_dealer_web.restful_api.dtos.UserDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserDTO;
 import com.car_dealer_web.restful_api.enums.UserAccountStatus;
 import com.car_dealer_web.restful_api.enums.UserActiveStatus;
 import com.car_dealer_web.restful_api.exceptions.BadRequestException;

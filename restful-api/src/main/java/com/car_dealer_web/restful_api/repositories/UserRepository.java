@@ -17,8 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
-import com.car_dealer_web.restful_api.dtos.UserDTO;
-import com.car_dealer_web.restful_api.dtos.joins.UserJoinDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserJoinDTO;
 import com.car_dealer_web.restful_api.exceptions.AccessDeniedException;
 import com.car_dealer_web.restful_api.exceptions.BadRequestException;
 import com.car_dealer_web.restful_api.exceptions.ResourceNotFoundException;

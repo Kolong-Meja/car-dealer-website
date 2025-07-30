@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.Hibernate;
@@ -16,12 +15,11 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
-import com.car_dealer_web.restful_api.dtos.UserDTO;
-import com.car_dealer_web.restful_api.dtos.joins.RoleJoinDTO;
+import com.car_dealer_web.restful_api.dtos.roles.RoleJoinDTO;
+import com.car_dealer_web.restful_api.dtos.roles.RoleWithPermissionsDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserDTO;
 import com.car_dealer_web.restful_api.enums.RoleStatus;
 import com.car_dealer_web.restful_api.exceptions.BadRequestException;
 import com.car_dealer_web.restful_api.exceptions.ResourceNotFoundException;
@@ -39,12 +37,9 @@ import com.car_dealer_web.restful_api.payloads.requests.roles.CreateRoleRequest;
 import com.car_dealer_web.restful_api.payloads.requests.roles.DetachPermissionsRequest;
 import com.car_dealer_web.restful_api.payloads.requests.roles.SyncPermissionsRequest;
 import com.car_dealer_web.restful_api.payloads.requests.roles.UpdateRoleRequest;
-import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
-import com.car_dealer_web.restful_api.utils.DateTime;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -89,208 +84,173 @@ public class RoleRepository implements IRole {
   }
 
   @Override
-  @Cacheable(value = "roles_cache")
-  public ResponseEntity<ApiResponse<PaginationResponse<RoleJoinDTO>>> findAll(SearchRequest searchRequest,
-      PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Fetching all role entity resources...");
+  @Cacheable(cacheNames = "roles_cache", key = "'all'")
+  public PaginationResponse<RoleJoinDTO> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
-    try {
-      CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    // ------------------COUNT QUERY-----------------------
+    CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+    Root<Role> countRoleRoot = countQuery.from(Role.class);
+    List<Predicate> countPredicates = new ArrayList<>();
 
-      // ------------------COUNT QUERY-----------------------
-      CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-      Root<Role> countRoleRoot = countQuery.from(Role.class);
-      List<Predicate> countPredicates = new ArrayList<>();
+    // WHERE DELETED_AT IS NULL.
+    countPredicates.add(builder.isNull(countRoleRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      countPredicates.add(builder.isNull(countRoleRoot.get("deleted_at")));
+    // CASE WHEN SEARCH REQUEST INCLUDED.
+    searchRequestPredicate(
+        searchRequest,
+        countPredicates,
+        builder,
+        countRoleRoot,
+        Arrays.asList("name"));
 
-      // CASE WHEN SEARCH REQUEST INCLUDED.
-      searchRequestPredicate(
-          searchRequest,
-          countPredicates,
-          builder,
-          countRoleRoot,
-          Arrays.asList("name"));
+    countQuery.select(builder.countDistinct(countRoleRoot))
+        .where(builder.and(countPredicates.toArray(Predicate[]::new)));
+    Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
 
-      countQuery.select(builder.countDistinct(countRoleRoot))
-          .where(builder.and(countPredicates.toArray(Predicate[]::new)));
-      Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
+    // ------------------SELECT QUERY------------------------
+    CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
+    Root<Role> selectRoleRoot = selectQuery.from(Role.class);
+    Join<Role, User> selectJoinWithUser = selectRoleRoot.join("users", JoinType.INNER);
+    Join<Role, Permission> selectJoinWithPermission = selectRoleRoot.join("permissions", JoinType.INNER);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-      // ------------------SELECT QUERY------------------------
-      CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<Role> selectRoleRoot = selectQuery.from(Role.class);
-      Join<Role, User> selectJoinWithUser = selectRoleRoot.join("users", JoinType.INNER);
-      Join<Role, Permission> selectJoinWithPermission = selectRoleRoot.join("permissions", JoinType.INNER);
-      List<Predicate> selectPredicates = new ArrayList<>();
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
+    // CASE WHEN SEARCH REQUEST INCLUDED.
+    searchRequestPredicate(
+        searchRequest,
+        countPredicates,
+        builder,
+        selectRoleRoot,
+        Arrays.asList("name"));
 
-      // CASE WHEN SEARCH REQUEST INCLUDED.
-      searchRequestPredicate(
-          searchRequest,
-          countPredicates,
-          builder,
-          selectRoleRoot,
-          Arrays.asList("name"));
+    selectQuery.multiselect(
+        // ROLES SELECTED COLUMNS.
+        selectRoleRoot.get("id").alias("id"),
+        selectRoleRoot.get("name").alias("name"),
+        selectRoleRoot.get("description").alias("description"),
+        selectRoleRoot.get("status").alias("status"),
+        selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
+        selectRoleRoot.get("created_at").alias("created_at"),
+        selectRoleRoot.get("updated_at").alias("updated_at"),
+        selectRoleRoot.get("deleted_at").alias("deleted_at"),
 
-      selectQuery.multiselect(
-          // ROLES SELECTED COLUMNS.
-          selectRoleRoot.get("id").alias("id"),
-          selectRoleRoot.get("name").alias("name"),
-          selectRoleRoot.get("description").alias("description"),
-          selectRoleRoot.get("status").alias("status"),
-          selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
-          selectRoleRoot.get("created_at").alias("created_at"),
-          selectRoleRoot.get("updated_at").alias("updated_at"),
-          selectRoleRoot.get("deleted_at").alias("deleted_at"),
+        // USERS SELECTED COLUMNS.
+        selectJoinWithUser.get("id").alias("user_id"),
+        selectJoinWithUser.get("fullname").alias("user_fullname"),
+        selectJoinWithUser.get("bio").alias("user_bio"),
+        selectJoinWithUser.get("email").alias("user_email"),
+        selectJoinWithUser.get("phone_number").alias("user_phone_number"),
+        selectJoinWithUser.get("address").alias("user_address"),
+        selectJoinWithUser.get("account_status").alias("user_account_status"),
+        selectJoinWithUser.get("active_status").alias("user_active_status"),
+        selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
+        selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
 
-          // USERS SELECTED COLUMNS.
-          selectJoinWithUser.get("id").alias("user_id"),
-          selectJoinWithUser.get("fullname").alias("user_fullname"),
-          selectJoinWithUser.get("bio").alias("user_bio"),
-          selectJoinWithUser.get("email").alias("user_email"),
-          selectJoinWithUser.get("phone_number").alias("user_phone_number"),
-          selectJoinWithUser.get("address").alias("user_address"),
-          selectJoinWithUser.get("account_status").alias("user_account_status"),
-          selectJoinWithUser.get("active_status").alias("user_active_status"),
-          selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
-          selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
+        // PERMISSION SELECTED COLUMNS.
+        selectJoinWithPermission.get("id").alias("permission_id"),
+        selectJoinWithPermission.get("name").alias("permission_name"),
+        selectJoinWithPermission.get("description").alias("permission_description"),
+        selectJoinWithPermission.get("status").alias("permission_status"))
+        .distinct(true)
+        .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
 
-          // PERMISSION SELECTED COLUMNS.
-          selectJoinWithPermission.get("id").alias("permission_id"),
-          selectJoinWithPermission.get("name").alias("permission_name"),
-          selectJoinWithPermission.get("description").alias("permission_description"),
-          selectJoinWithPermission.get("status").alias("permission_status"))
-          .distinct(true)
-          .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
-
-      // SORT DATA.
-      if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
-        selectQuery.orderBy(
-            builder.asc(selectRoleRoot.get(paginationRequest.sortField())));
-      } else {
-        selectQuery.orderBy(
-            builder.desc(selectRoleRoot.get(paginationRequest.sortField())));
-      }
-
-      TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-
-      // OFFSET DATA.
-      typedQuery.setFirstResult((paginationRequest.page() - 1) * paginationRequest.size());
-
-      // LIMIT DATA.
-      typedQuery.setMaxResults(paginationRequest.size());
-
-      // CONVERT INTO DTO.
-      List<Tuple> result = typedQuery.getResultList();
-      List<RoleJoinDTO> roleJoinWithOthers = result.stream()
-          .map(RoleJoinDTO::fromTuple)
-          .toList();
-
-      // SETUP PAGINATION RESPONSE.
-      var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
-      var hasNext = paginationRequest.page() < totalPages;
-      PaginationResponse<RoleJoinDTO> resource = new PaginationResponse<>(
-          roleJoinWithOthers,
-          totalPages,
-          totalElements,
-          paginationRequest.size(),
-          paginationRequest.page(),
-          hasNext);
-
-      ApiResponse<PaginationResponse<RoleJoinDTO>> response = new ApiResponse<>(
-          HttpStatus.OK.value(),
-          true,
-          "Succesfully fetch roles.",
-          DateTime.now(),
-          httpServletRequest.getRequestURI(),
-          resource);
-
-      LOG.info(response.message());
-
-      return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoResultException e) {
-      LOG.error(e.getMessage());
-
-      throw new ResourceNotFoundException(e.getMessage());
+    // SORT DATA.
+    if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
+      selectQuery.orderBy(
+          builder.asc(selectRoleRoot.get(paginationRequest.sortField())));
+    } else {
+      selectQuery.orderBy(
+          builder.desc(selectRoleRoot.get(paginationRequest.sortField())));
     }
+
+    TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
+
+    // OFFSET DATA.
+    typedQuery.setFirstResult((paginationRequest.page() - 1) * paginationRequest.size());
+
+    // LIMIT DATA.
+    typedQuery.setMaxResults(paginationRequest.size());
+
+    // CONVERT INTO DTO.
+    List<Tuple> result = typedQuery.getResultList();
+    List<RoleJoinDTO> roleJoinWithOthers = result.stream()
+        .map(RoleJoinDTO::fromTuple)
+        .toList();
+
+    // SETUP PAGINATION RESPONSE.
+    var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
+    var hasNext = paginationRequest.page() < totalPages;
+    PaginationResponse<RoleJoinDTO> resource = new PaginationResponse<>(
+        roleJoinWithOthers,
+        totalPages,
+        totalElements,
+        paginationRequest.size(),
+        paginationRequest.page(),
+        hasNext);
+
+    return resource;
   }
 
   @Override
-  @Cacheable(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Fetching role entity with ID %s resource...", id));
+  @Cacheable(cacheNames = "roles_cache", key = "#id")
+  public RoleJoinDTO findOne(String id) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
+    Root<Role> selectRoleRoot = selectQuery.from(Role.class);
+    Join<Role, User> selectJoinWithUser = selectRoleRoot.join("users", JoinType.INNER);
+    Join<Role, Permission> selectJoinWithPermission = selectRoleRoot.join("permissions", JoinType.INNER);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-    try {
-      CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-      CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<Role> selectRoleRoot = selectQuery.from(Role.class);
-      Join<Role, User> selectJoinWithUser = selectRoleRoot.join("users", JoinType.INNER);
-      Join<Role, Permission> selectJoinWithPermission = selectRoleRoot.join("permissions", JoinType.INNER);
-      List<Predicate> selectPredicates = new ArrayList<>();
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
+    selectQuery.multiselect(
+        // ROLES SELECTED COLUMNS.
+        selectRoleRoot.get("id").alias("id"),
+        selectRoleRoot.get("name").alias("name"),
+        selectRoleRoot.get("description").alias("description"),
+        selectRoleRoot.get("status").alias("status"),
+        selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
+        selectRoleRoot.get("created_at").alias("created_at"),
+        selectRoleRoot.get("updated_at").alias("updated_at"),
+        selectRoleRoot.get("deleted_at").alias("deleted_at"),
 
-      selectQuery.multiselect(
-          // ROLES SELECTED COLUMNS.
-          selectRoleRoot.get("id").alias("id"),
-          selectRoleRoot.get("name").alias("name"),
-          selectRoleRoot.get("description").alias("description"),
-          selectRoleRoot.get("status").alias("status"),
-          selectRoleRoot.get("last_edited_by").alias("last_edited_by"),
-          selectRoleRoot.get("created_at").alias("created_at"),
-          selectRoleRoot.get("updated_at").alias("updated_at"),
-          selectRoleRoot.get("deleted_at").alias("deleted_at"),
+        // USERS SELECTED COLUMNS.
+        selectJoinWithUser.get("id").alias("user_id"),
+        selectJoinWithUser.get("fullname").alias("user_fullname"),
+        selectJoinWithUser.get("bio").alias("user_bio"),
+        selectJoinWithUser.get("email").alias("user_email"),
+        selectJoinWithUser.get("phone_number").alias("user_phone_number"),
+        selectJoinWithUser.get("address").alias("user_address"),
+        selectJoinWithUser.get("account_status").alias("user_account_status"),
+        selectJoinWithUser.get("active_status").alias("user_active_status"),
+        selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
 
-          // USERS SELECTED COLUMNS.
-          selectJoinWithUser.get("id").alias("user_id"),
-          selectJoinWithUser.get("fullname").alias("user_fullname"),
-          selectJoinWithUser.get("bio").alias("user_bio"),
-          selectJoinWithUser.get("email").alias("user_email"),
-          selectJoinWithUser.get("phone_number").alias("user_phone_number"),
-          selectJoinWithUser.get("address").alias("user_address"),
-          selectJoinWithUser.get("account_status").alias("user_account_status"),
-          selectJoinWithUser.get("active_status").alias("user_active_status"),
-          selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
+        // PERMISSION SELECTED COLUMNS.
+        selectJoinWithPermission.get("id").alias("permission_id"),
+        selectJoinWithPermission.get("name").alias("permission_name"),
+        selectJoinWithPermission.get("description").alias("permission_description"),
+        selectJoinWithPermission.get("status").alias("permission_status"))
+        .distinct(true)
+        .where(builder.and(
+            builder.and(selectPredicates.toArray(Predicate[]::new)),
+            builder.equal(selectRoleRoot.get("id"), id)));
 
-          // PERMISSION SELECTED COLUMNS.
-          selectJoinWithPermission.get("id").alias("permission_id"),
-          selectJoinWithPermission.get("name").alias("permission_name"),
-          selectJoinWithPermission.get("description").alias("permission_description"),
-          selectJoinWithPermission.get("status").alias("permission_status"))
-          .distinct(true)
-          .where(builder.and(
-              builder.and(selectPredicates.toArray(Predicate[]::new)),
-              builder.equal(selectRoleRoot.get("id"), id)));
+    // CONVERT INTO DTO.
+    TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
+    RoleJoinDTO resource = RoleJoinDTO.fromTuple(typedQuery.getSingleResult());
 
-      // CONVERT INTO DTO.
-      TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-      RoleJoinDTO resource = RoleJoinDTO.fromTuple(typedQuery.getSingleResult());
-
-      ApiResponse<RoleJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-          String.format("Successfully fetch role with ID %s", id), DateTime.now(), httpServletRequest.getRequestURI(),
-          resource);
-
-      LOG.info(response.message());
-
-      return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoResultException e) {
-      LOG.error(e.getMessage());
-
-      throw new ResourceNotFoundException(e.getMessage());
-    }
+    return resource;
   }
 
   @Override
   @Transactional
-  @CachePut(value = "roles_cache", key = "#result.resource.id")
-  public ResponseEntity<ApiResponse<Role>> save(CreateRoleRequest createRoleRequest,
-      HttpServletRequest httpServletRequest) {
-    LOG.info("Creating new role...");
-
+  @CachePut(value = "roles_cache", key = "#role.id")
+  public Role save(CreateRoleRequest createRoleRequest) {
     Role role = new Role();
     role.setName(createRoleRequest.name());
     role.setDescription(createRoleRequest.description());
@@ -299,26 +259,19 @@ public class RoleRepository implements IRole {
     entityManager.persist(role);
     entityManager.flush();
 
-    ApiResponse<Role> response = new ApiResponse<>(HttpStatus.CREATED.value(), true, "Successfully add new role.",
-        DateTime.now(),
-        httpServletRequest.getRequestURI(),
-        role);
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.CREATED);
+    return role;
   }
 
   @Override
   @Transactional
   @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> update(String id, UpdateRoleRequest updateRoleRequest,
+  public int update(String id, UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Updating role entity with ID %s...", id));
-
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -329,6 +282,8 @@ public class RoleRepository implements IRole {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
@@ -346,33 +301,24 @@ public class RoleRepository implements IRole {
     criteriaUpdate.where(builder.equal(roleRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("role with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("role with ID %s not found.", id));
+    if (updated > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully update role entity with ID %s.", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return updated;
   }
 
   @Override
   @Transactional
   @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Restoring role entity with ID %s...", id));
-
+  public int restore(String id, HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -383,6 +329,8 @@ public class RoleRepository implements IRole {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
@@ -400,34 +348,25 @@ public class RoleRepository implements IRole {
         builder.equal(roleRoot.get("id"), id),
         builder.isNotNull(roleRoot.get("deleted_at"))));
 
-    int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("role with ID %s not found or is not deleted.", id));
+    int restored = entityManager.createQuery(criteriaUpdate).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("role with ID %s not found or is not deleted.", id));
+    if (restored > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully restore role entity with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return restored;
   }
 
   @Override
   @Transactional
   @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Soft deleting role entity with ID %s...", id));
-
+  public int delete(String id, HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -438,6 +377,8 @@ public class RoleRepository implements IRole {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
@@ -453,63 +394,67 @@ public class RoleRepository implements IRole {
     criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.equal(roleRoot.get("id"), id));
 
-    int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("role with ID %s not found.", id));
+    int softDeleted = entityManager.createQuery(criteriaUpdate).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("role with ID %s not found.", id));
+    if (softDeleted > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully soft delete role with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return softDeleted;
   }
 
   @Override
   @Transactional
   @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Force deleting role entity with ID %s...", id));
-
+  public int forceDelete(String id) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaDelete<Role> criteriaDelete = builder.createCriteriaDelete(Role.class);
     Root<Role> roleRoot = criteriaDelete.from(Role.class);
 
     criteriaDelete.where(builder.equal(roleRoot.get("id"), id));
 
-    int deletedCount = entityManager.createQuery(criteriaDelete).executeUpdate();
-    if (deletedCount != 1) {
-      LOG.error(String.format("role with ID %s not found.", id));
+    int forceDeleted = entityManager.createQuery(criteriaDelete).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("role with id %s not found.", id));
+    if (forceDeleted > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
+    return forceDeleted;
+  }
 
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully force delete role entity with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
+  @Override
+  public RoleWithPermissionsDTO fetchPermissions(String id) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Role> selectQuery = builder.createQuery(Role.class);
+    Root<Role> selectRoleRoot = selectQuery.from(Role.class);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-    LOG.info(response.message());
+    // FETCH PERMISSiONS.
+    selectRoleRoot.fetch("permissions", JoinType.INNER);
 
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectRoleRoot.get("deleted_at")));
+
+    selectQuery.select(selectRoleRoot)
+        .distinct(true)
+        .where(builder.and(
+            builder.and(selectPredicates.toArray(Predicate[]::new)),
+            builder.equal(selectRoleRoot.get("id"), id)));
+
+    TypedQuery<Role> typedQuery = entityManager.createQuery(selectQuery);
+    RoleWithPermissionsDTO resource = RoleWithPermissionsDTO
+        .fromObject(typedQuery.getSingleResult());
+
+    return resource;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> attachPermissions(String id,
-      AttachPermissionsRequest attachPermissionsRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Attaching relation with permissions...");
-
+  @CachePut(value = "role_permissions_cache", key = "#id")
+  public void attachPermissions(String id,
+      AttachPermissionsRequest attachPermissionsRequest) {
     Role role = entityManager.find(Role.class, id);
 
     if (role == null) {
@@ -548,21 +493,13 @@ public class RoleRepository implements IRole {
 
     entityManager.persist(role);
     entityManager.flush();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        "Successfully attach relation with selected permissions.",
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", attachPermissionsRequest.permissionIds()));
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> detachPermissions(String id,
-      DetachPermissionsRequest detachPermissionsRequest, HttpServletRequest httpServletRequest) {
+  @CachePut(value = "role_permissions_cache", key = "#id")
+  public void detachPermissions(String id,
+      DetachPermissionsRequest detachPermissionsRequest) {
     LOG.info("Detaching relation with permissions...");
 
     Role role = entityManager.find(Role.class, id);
@@ -587,21 +524,13 @@ public class RoleRepository implements IRole {
     entityManager.merge(role);
     entityManager.flush();
     entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        "Successfully detach relation with selected permissions.",
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", detachPermissionsRequest.permissionIds()));
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
-  public ResponseEntity<ApiResponse<Object>> syncPermissions(String id,
-      SyncPermissionsRequest syncPermissionsRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Attaching relation with permissions...");
-
+  @Transactional
+  @CachePut(value = "role_permissions_cache", key = "#id")
+  public void syncPermissions(String id,
+      SyncPermissionsRequest syncPermissionsRequest) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
     // CHECK THE PERMISSION IDS FIRST.
@@ -638,13 +567,5 @@ public class RoleRepository implements IRole {
     entityManager.merge(role);
     entityManager.flush();
     entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        "Successfully attach relation with selected permissions.",
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", syncPermissionsRequest.permissionIds()));
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 }

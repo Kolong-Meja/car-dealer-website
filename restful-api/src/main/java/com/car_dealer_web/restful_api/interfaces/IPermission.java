@@ -1,8 +1,7 @@
 package com.car_dealer_web.restful_api.interfaces;
 
-import org.springframework.http.ResponseEntity;
-
-import com.car_dealer_web.restful_api.dtos.joins.PermissionJoinDTO;
+import com.car_dealer_web.restful_api.dtos.permissions.PermissionJoinDTO;
+import com.car_dealer_web.restful_api.dtos.permissions.PermissionWithRolesDTO;
 import com.car_dealer_web.restful_api.models.Permission;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
@@ -11,35 +10,31 @@ import com.car_dealer_web.restful_api.payloads.requests.permissions.CreatePermis
 import com.car_dealer_web.restful_api.payloads.requests.permissions.DetachRolesRequest;
 import com.car_dealer_web.restful_api.payloads.requests.permissions.SyncRolesRequest;
 import com.car_dealer_web.restful_api.payloads.requests.permissions.UpdatePermissionRequest;
-import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface IPermission {
-  ResponseEntity<ApiResponse<PaginationResponse<PermissionJoinDTO>>> findAll(SearchRequest searchRequest,
-      PaginationRequest paginationRequest, HttpServletRequest httpServletRequest);
+  PaginationResponse<PermissionJoinDTO> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest);
 
-  ResponseEntity<ApiResponse<PermissionJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest);
+  PermissionJoinDTO findOne(String id);
 
-  ResponseEntity<ApiResponse<Permission>> save(CreatePermissionRequest createPermissionRequest,
-      HttpServletRequest httpServletRequest);
+  Permission save(CreatePermissionRequest createPermissionRequest);
 
-  ResponseEntity<ApiResponse<Object>> update(String id, UpdatePermissionRequest updatePermissionRequest,
-      HttpServletRequest httpServletRequest);
+  int update(String id, UpdatePermissionRequest updatePermissionRequest, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest);
+  int restore(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest);
+  int delete(String id, HttpServletRequest httpServletRequest);
 
-  ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest);
+  int forceDelete(String id);
 
-  ResponseEntity<ApiResponse<Object>> attachRoles(String id, AttachRolesRequest attachRolesRequest,
-      HttpServletRequest httpServletRequest);
+  PermissionWithRolesDTO fetchRoles(String id);
 
-  ResponseEntity<ApiResponse<Object>> detachRoles(String id, DetachRolesRequest detachRolesRequest,
-      HttpServletRequest httpServletRequest);
+  void attachRoles(String id, AttachRolesRequest attachRolesRequest);
 
-  ResponseEntity<ApiResponse<Object>> syncRoles(String id, SyncRolesRequest syncRolesRequest,
-      HttpServletRequest httpServletRequest);
+  void detachRoles(String id, DetachRolesRequest detachRolesRequest);
+
+  void syncRoles(String id, SyncRolesRequest syncRolesRequest);
 }

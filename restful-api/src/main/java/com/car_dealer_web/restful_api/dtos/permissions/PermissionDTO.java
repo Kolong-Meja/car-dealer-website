@@ -1,4 +1,4 @@
-package com.car_dealer_web.restful_api.dtos;
+package com.car_dealer_web.restful_api.dtos.permissions;
 
 import java.time.LocalDateTime;
 import java.util.Objects;

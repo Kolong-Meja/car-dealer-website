@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 
-import com.car_dealer_web.restful_api.dtos.joins.UserJoinDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserJoinDTO;
 import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;

@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.hibernate.Hibernate;
@@ -15,13 +14,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
-import com.car_dealer_web.restful_api.dtos.UserDTO;
-import com.car_dealer_web.restful_api.dtos.joins.PermissionJoinDTO;
+import com.car_dealer_web.restful_api.dtos.permissions.PermissionJoinDTO;
+import com.car_dealer_web.restful_api.dtos.permissions.PermissionWithRolesDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserDTO;
 import com.car_dealer_web.restful_api.enums.RoleStatus;
 import com.car_dealer_web.restful_api.exceptions.BadRequestException;
 import com.car_dealer_web.restful_api.exceptions.ResourceNotFoundException;
@@ -39,12 +38,9 @@ import com.car_dealer_web.restful_api.payloads.requests.permissions.CreatePermis
 import com.car_dealer_web.restful_api.payloads.requests.permissions.DetachRolesRequest;
 import com.car_dealer_web.restful_api.payloads.requests.permissions.SyncRolesRequest;
 import com.car_dealer_web.restful_api.payloads.requests.permissions.UpdatePermissionRequest;
-import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
-import com.car_dealer_web.restful_api.utils.DateTime;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.NoResultException;
 import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -63,7 +59,7 @@ public class PermissionRepository implements IPermission {
   private final IUser iUser;
   private final EntityManager entityManager;
   private final JwtAuthHandler jwtAuthHandler;
-  private final static Logger LOG = LoggerFactory.getLogger(RoleRepository.class);
+  private final static Logger LOG = LoggerFactory.getLogger(PermissionRepository.class);
 
   public PermissionRepository(IUser iUser, EntityManager entityManager, JwtAuthHandler jwtAuthHandler) {
     this.iUser = iUser;
@@ -86,210 +82,178 @@ public class PermissionRepository implements IPermission {
   }
 
   @Override
-  @Cacheable(value = "permissions_cache")
-  public ResponseEntity<ApiResponse<PaginationResponse<PermissionJoinDTO>>> findAll(SearchRequest searchRequest,
-      PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Fetching all permission entity resources...");
+  @Cacheable(cacheNames = "permissions_cache", key = "'all'")
+  public PaginationResponse<PermissionJoinDTO> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
-    try {
-      CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    // ------------------COUNT QUERY-----------------------
+    CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+    Root<Permission> countRoleRoot = countQuery.from(Permission.class);
+    List<Predicate> countPredicates = new ArrayList<>();
 
-      // ------------------COUNT QUERY-----------------------
-      CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-      Root<Permission> countRoleRoot = countQuery.from(Permission.class);
-      List<Predicate> countPredicates = new ArrayList<>();
+    // WHERE DELETED_AT IS NULL.
+    countPredicates.add(builder.isNull(countRoleRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      countPredicates.add(builder.isNull(countRoleRoot.get("deleted_at")));
+    // CASE WHEN SEARCH REQUEST INCLUDED.
+    searchRequestPredicate(
+        searchRequest,
+        countPredicates,
+        builder,
+        countRoleRoot,
+        Arrays.asList("name"));
 
-      // CASE WHEN SEARCH REQUEST INCLUDED.
-      searchRequestPredicate(
-          searchRequest,
-          countPredicates,
-          builder,
-          countRoleRoot,
-          Arrays.asList("name"));
+    countQuery.select(builder.countDistinct(countRoleRoot))
+        .where(builder.and(countPredicates.toArray(Predicate[]::new)));
+    Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
 
-      countQuery.select(builder.countDistinct(countRoleRoot))
-          .where(builder.and(countPredicates.toArray(Predicate[]::new)));
-      Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
+    // ------------------SELECT QUERY------------------------
+    CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
+    Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
+    Join<Permission, Role> selectJoinWithRole = selectPermissionRoot.join("roles", JoinType.INNER);
+    Join<Role, User> selectJoinWithUser = selectPermissionRoot.join("users", JoinType.INNER);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-      // ------------------SELECT QUERY------------------------
-      CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
-      Join<Permission, Role> selectJoinWithRole = selectPermissionRoot.join("roles", JoinType.INNER);
-      Join<Role, User> selectJoinWithUser = selectPermissionRoot.join("users", JoinType.INNER);
-      List<Predicate> selectPredicates = new ArrayList<>();
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
+    // CASE WHEN SEARCH REQUEST INCLUDED.
+    searchRequestPredicate(
+        searchRequest,
+        countPredicates,
+        builder,
+        selectPermissionRoot,
+        Arrays.asList("name"));
 
-      // CASE WHEN SEARCH REQUEST INCLUDED.
-      searchRequestPredicate(
-          searchRequest,
-          countPredicates,
-          builder,
-          selectPermissionRoot,
-          Arrays.asList("name"));
+    selectQuery.multiselect(
+        // PERMISSIONS SELECTED COLUMNS.
+        selectPermissionRoot.get("id").alias("id"),
+        selectPermissionRoot.get("name").alias("name"),
+        selectPermissionRoot.get("description").alias("description"),
+        selectPermissionRoot.get("status").alias("status"),
+        selectPermissionRoot.get("last_edited_by").alias("last_edited_by"),
+        selectPermissionRoot.get("created_at").alias("created_at"),
+        selectPermissionRoot.get("updated_at").alias("updated_at"),
+        selectPermissionRoot.get("deleted_at").alias("deleted_at"),
 
-      selectQuery.multiselect(
-          // PERMISSIONS SELECTED COLUMNS.
-          selectPermissionRoot.get("id").alias("id"),
-          selectPermissionRoot.get("name").alias("name"),
-          selectPermissionRoot.get("description").alias("description"),
-          selectPermissionRoot.get("status").alias("status"),
-          selectPermissionRoot.get("last_edited_by").alias("last_edited_by"),
-          selectPermissionRoot.get("created_at").alias("created_at"),
-          selectPermissionRoot.get("updated_at").alias("updated_at"),
-          selectPermissionRoot.get("deleted_at").alias("deleted_at"),
+        // USERS SELECTED COLUMNS.
+        selectJoinWithUser.get("id").alias("user_id"),
+        selectJoinWithUser.get("fullname").alias("user_fullname"),
+        selectJoinWithUser.get("bio").alias("user_bio"),
+        selectJoinWithUser.get("email").alias("user_email"),
+        selectJoinWithUser.get("phone_number").alias("user_phone_number"),
+        selectJoinWithUser.get("address").alias("user_address"),
+        selectJoinWithUser.get("account_status").alias("user_account_status"),
+        selectJoinWithUser.get("active_status").alias("user_active_status"),
+        selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
+        selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
 
-          // USERS SELECTED COLUMNS.
-          selectJoinWithUser.get("id").alias("user_id"),
-          selectJoinWithUser.get("fullname").alias("user_fullname"),
-          selectJoinWithUser.get("bio").alias("user_bio"),
-          selectJoinWithUser.get("email").alias("user_email"),
-          selectJoinWithUser.get("phone_number").alias("user_phone_number"),
-          selectJoinWithUser.get("address").alias("user_address"),
-          selectJoinWithUser.get("account_status").alias("user_account_status"),
-          selectJoinWithUser.get("active_status").alias("user_active_status"),
-          selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
-          selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
+        // ROLE SELECTED COLUMNS.
+        selectJoinWithRole.get("id").alias("permission_id"),
+        selectJoinWithRole.get("name").alias("permission_name"),
+        selectJoinWithRole.get("description").alias("permission_description"),
+        selectJoinWithRole.get("status").alias("permission_status"))
+        .distinct(true)
+        .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
 
-          // ROLE SELECTED COLUMNS.
-          selectJoinWithRole.get("id").alias("permission_id"),
-          selectJoinWithRole.get("name").alias("permission_name"),
-          selectJoinWithRole.get("description").alias("permission_description"),
-          selectJoinWithRole.get("status").alias("permission_status"))
-          .distinct(true)
-          .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
-
-      // SORT DATA.
-      if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
-        selectQuery.orderBy(
-            builder.asc(selectPermissionRoot.get(paginationRequest.sortField())));
-      } else {
-        selectQuery.orderBy(
-            builder.desc(selectPermissionRoot.get(paginationRequest.sortField())));
-      }
-
-      TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-
-      // OFFSET DATA.
-      typedQuery.setFirstResult((paginationRequest.page() - 1) * paginationRequest.size());
-
-      // LIMIT DATA.
-      typedQuery.setMaxResults(paginationRequest.size());
-
-      // CONVERT INTO DTO.
-      List<Tuple> result = typedQuery.getResultList();
-      List<PermissionJoinDTO> permissionJoinWithOthers = result.stream()
-          .map(PermissionJoinDTO::fromTuple)
-          .toList();
-
-      // SETUP PAGINATION RESPONSE.
-      var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
-      var hasNext = paginationRequest.page() < totalPages;
-      PaginationResponse<PermissionJoinDTO> resource = new PaginationResponse<>(
-          permissionJoinWithOthers,
-          totalPages,
-          totalElements,
-          paginationRequest.size(),
-          paginationRequest.page(),
-          hasNext);
-
-      ApiResponse<PaginationResponse<PermissionJoinDTO>> response = new ApiResponse<>(
-          HttpStatus.OK.value(),
-          true,
-          "Succesfully fetch permissions.",
-          DateTime.now(),
-          httpServletRequest.getRequestURI(),
-          resource);
-
-      LOG.info(response.message());
-
-      return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoResultException e) {
-      LOG.error(e.getMessage());
-
-      throw new ResourceNotFoundException(e.getMessage());
+    // SORT DATA.
+    if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
+      selectQuery.orderBy(
+          builder.asc(selectPermissionRoot.get(paginationRequest.sortField())));
+    } else {
+      selectQuery.orderBy(
+          builder.desc(selectPermissionRoot.get(paginationRequest.sortField())));
     }
+
+    TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
+
+    // OFFSET DATA.
+    typedQuery.setFirstResult((paginationRequest.page() - 1) * paginationRequest.size());
+
+    // LIMIT DATA.
+    typedQuery.setMaxResults(paginationRequest.size());
+
+    // CONVERT INTO DTO.
+    List<Tuple> result = typedQuery.getResultList();
+    List<PermissionJoinDTO> permissionJoinWithOthers = result.stream()
+        .map(PermissionJoinDTO::fromTuple)
+        .toList();
+
+    // SETUP PAGINATION RESPONSE.
+    var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
+    var hasNext = paginationRequest.page() < totalPages;
+    PaginationResponse<PermissionJoinDTO> resource = new PaginationResponse<>(
+        permissionJoinWithOthers,
+        totalPages,
+        totalElements,
+        paginationRequest.size(),
+        paginationRequest.page(),
+        hasNext);
+
+    return resource;
   }
 
   @Override
-  @Cacheable(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<PermissionJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Fetching permission entity with ID %s resource...", id));
+  @Cacheable(cacheNames = "permissions_cache", key = "#id")
+  public PermissionJoinDTO findOne(String id) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
+    Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
+    Join<Permission, Role> selectJoinWithRole = selectPermissionRoot.join("roles", JoinType.INNER);
+    Join<Role, User> selectJoinWithUser = selectPermissionRoot.join("users", JoinType.INNER);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-    try {
-      CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-      CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
-      Join<Permission, Role> selectJoinWithRole = selectPermissionRoot.join("roles", JoinType.INNER);
-      Join<Role, User> selectJoinWithUser = selectPermissionRoot.join("users", JoinType.INNER);
-      List<Predicate> selectPredicates = new ArrayList<>();
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
+    selectQuery.multiselect(
+        // PERMISSIONS SELECTED COLUMNS.
+        selectPermissionRoot.get("id").alias("id"),
+        selectPermissionRoot.get("name").alias("name"),
+        selectPermissionRoot.get("description").alias("description"),
+        selectPermissionRoot.get("status").alias("status"),
+        selectPermissionRoot.get("last_edited_by").alias("last_edited_by"),
+        selectPermissionRoot.get("created_at").alias("created_at"),
+        selectPermissionRoot.get("updated_at").alias("updated_at"),
+        selectPermissionRoot.get("deleted_at").alias("deleted_at"),
 
-      selectQuery.multiselect(
-          // PERMISSIONS SELECTED COLUMNS.
-          selectPermissionRoot.get("id").alias("id"),
-          selectPermissionRoot.get("name").alias("name"),
-          selectPermissionRoot.get("description").alias("description"),
-          selectPermissionRoot.get("status").alias("status"),
-          selectPermissionRoot.get("last_edited_by").alias("last_edited_by"),
-          selectPermissionRoot.get("created_at").alias("created_at"),
-          selectPermissionRoot.get("updated_at").alias("updated_at"),
-          selectPermissionRoot.get("deleted_at").alias("deleted_at"),
+        // USERS SELECTED COLUMNS.
+        selectJoinWithUser.get("id").alias("user_id"),
+        selectJoinWithUser.get("fullname").alias("user_fullname"),
+        selectJoinWithUser.get("bio").alias("user_bio"),
+        selectJoinWithUser.get("email").alias("user_email"),
+        selectJoinWithUser.get("phone_number").alias("user_phone_number"),
+        selectJoinWithUser.get("address").alias("user_address"),
+        selectJoinWithUser.get("account_status").alias("user_account_status"),
+        selectJoinWithUser.get("active_status").alias("user_active_status"),
+        selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
+        selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
 
-          // USERS SELECTED COLUMNS.
-          selectJoinWithUser.get("id").alias("user_id"),
-          selectJoinWithUser.get("fullname").alias("user_fullname"),
-          selectJoinWithUser.get("bio").alias("user_bio"),
-          selectJoinWithUser.get("email").alias("user_email"),
-          selectJoinWithUser.get("phone_number").alias("user_phone_number"),
-          selectJoinWithUser.get("address").alias("user_address"),
-          selectJoinWithUser.get("account_status").alias("user_account_status"),
-          selectJoinWithUser.get("active_status").alias("user_active_status"),
-          selectJoinWithUser.get("avatar_url").alias("user_avatar_url"),
-          selectJoinWithUser.get("last_login_at").alias("user_last_login_at"),
+        // ROLE SELECTED COLUMNS.
+        selectJoinWithRole.get("id").alias("permission_id"),
+        selectJoinWithRole.get("name").alias("permission_name"),
+        selectJoinWithRole.get("description").alias("permission_description"),
+        selectJoinWithRole.get("status").alias("permission_status"))
+        .distinct(true)
+        .where(builder.and(
+            builder.and(selectPredicates.toArray(Predicate[]::new)),
+            builder.equal(selectPermissionRoot.get("id"), id)));
 
-          // ROLE SELECTED COLUMNS.
-          selectJoinWithRole.get("id").alias("permission_id"),
-          selectJoinWithRole.get("name").alias("permission_name"),
-          selectJoinWithRole.get("description").alias("permission_description"),
-          selectJoinWithRole.get("status").alias("permission_status"))
-          .distinct(true)
-          .where(builder.and(
-              builder.and(selectPredicates.toArray(Predicate[]::new)),
-              builder.equal(selectPermissionRoot.get("id"), id)));
+    // CONVERT INTO DTO.
+    TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
+    PermissionJoinDTO resource = PermissionJoinDTO.fromTuple(typedQuery.getSingleResult());
 
-      // CONVERT INTO DTO.
-      TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-      PermissionJoinDTO resource = PermissionJoinDTO.fromTuple(typedQuery.getSingleResult());
-
-      ApiResponse<PermissionJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-          String.format("Successfully fetch permission with ID %s", id), DateTime.now(),
-          httpServletRequest.getRequestURI(),
-          resource);
-
-      LOG.info(response.message());
-
-      return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoResultException e) {
-      LOG.error(e.getMessage());
-
-      throw new ResourceNotFoundException(e.getMessage());
-    }
+    return resource;
   }
 
   @Override
   @Transactional
-  @CachePut(value = "permissions_cache", key = "#result.resource.id")
-  public ResponseEntity<ApiResponse<Permission>> save(
-      CreatePermissionRequest createPermissionRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Creating new role...");
-
+  @Caching(put = {
+      @CachePut(cacheNames = "permissions_cache", key = "#permission.id")
+  }, evict = {
+      @CacheEvict(cacheNames = "permissions_cache", key = "'all'")
+  })
+  public Permission save(CreatePermissionRequest createPermissionRequest) {
     Permission permission = new Permission();
     permission.setName(createPermissionRequest.name());
     permission.setDescription(createPermissionRequest.description());
@@ -298,27 +262,25 @@ public class PermissionRepository implements IPermission {
     entityManager.persist(permission);
     entityManager.flush();
 
-    ApiResponse<Permission> response = new ApiResponse<>(HttpStatus.CREATED.value(), true,
-        "Successfully add new permission.",
-        DateTime.now(),
-        httpServletRequest.getRequestURI(),
-        permission);
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.CREATED);
+    return permission;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> update(String id, UpdatePermissionRequest updatePermissionRequest,
+  @Caching(put = {
+      @CachePut(cacheNames = "permissions_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "permissions_cache", key = "'all'")
+  })
+  public int update(
+      String id,
+      UpdatePermissionRequest updatePermissionRequest,
       HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Updating permission entity with ID %s...", id));
-
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -329,6 +291,8 @@ public class PermissionRepository implements IPermission {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
@@ -346,33 +310,28 @@ public class PermissionRepository implements IPermission {
     criteriaUpdate.where(builder.equal(permissionRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("permission with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("permission with ID %s not found.", id));
+    if (updated > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully update permission entity with ID %s.", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return updated;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Restoring permission entity with ID %s...", id));
-
+  @Caching(put = {
+      @CachePut(cacheNames = "permissions_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "permissions_cache", key = "'all'")
+  })
+  public int restore(String id, HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -383,6 +342,8 @@ public class PermissionRepository implements IPermission {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
@@ -400,34 +361,29 @@ public class PermissionRepository implements IPermission {
         builder.equal(permissionRoot.get("id"), id),
         builder.isNotNull(permissionRoot.get("deleted_at"))));
 
-    int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("permission with ID %s not found or is not deleted.", id));
+    int restored = entityManager.createQuery(criteriaUpdate).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("permission with ID %s not found or is not deleted.", id));
+    if (restored > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully restore permission entity with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return restored;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Soft deleting permission entity with ID %s...", id));
-
+  @Caching(put = {
+      @CachePut(cacheNames = "permissions_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "permissions_cache", key = "'all'")
+  })
+  public int delete(String id, HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -438,6 +394,8 @@ public class PermissionRepository implements IPermission {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
@@ -453,63 +411,71 @@ public class PermissionRepository implements IPermission {
     criteriaUpdate.set("updated_at", LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
     criteriaUpdate.where(builder.equal(permissionRoot.get("id"), id));
 
-    int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("permission with ID %s not found.", id));
+    int softDeleted = entityManager.createQuery(criteriaUpdate).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("permission with ID %s not found.", id));
+    if (softDeleted > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully soft delete permission with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return softDeleted;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Force deleting permission entity with ID %s...", id));
-
+  @Caching(evict = {
+      @CacheEvict(cacheNames = "permissions_cache", key = "#id"),
+      @CacheEvict(cacheNames = "permissions_cache", key = "'all'")
+  })
+  public int forceDelete(String id) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaDelete<Permission> criteriaDelete = builder.createCriteriaDelete(Permission.class);
     Root<Permission> permissionRoot = criteriaDelete.from(Permission.class);
 
     criteriaDelete.where(builder.equal(permissionRoot.get("id"), id));
 
-    int deletedCount = entityManager.createQuery(criteriaDelete).executeUpdate();
-    if (deletedCount != 1) {
-      LOG.error(String.format("permission with ID %s not found.", id));
+    int forceDeleted = entityManager.createQuery(criteriaDelete).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("permission with id %s not found.", id));
+    if (forceDeleted > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully force delete permission entity with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return forceDeleted;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> attachRoles(String id, AttachRolesRequest attachRolesRequest,
-      HttpServletRequest httpServletRequest) {
-    LOG.info("Attaching relation with roles...");
+  @Cacheable(value = "permission_roles_cache", key = "#id")
+  public PermissionWithRolesDTO fetchRoles(String id) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Permission> selectQuery = builder.createQuery(Permission.class);
+    Root<Permission> selectPermissionRoot = selectQuery.from(Permission.class);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
+    // FETCH ROLES.
+    selectPermissionRoot.fetch("roles", JoinType.INNER);
+
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectPermissionRoot.get("deleted_at")));
+
+    selectQuery.select(selectPermissionRoot)
+        .distinct(true)
+        .where(builder.and(
+            builder.and(selectPredicates.toArray(Predicate[]::new)),
+            builder.equal(selectPermissionRoot.get("id"), id)));
+
+    TypedQuery<Permission> typedQuery = entityManager.createQuery(selectQuery);
+    PermissionWithRolesDTO resource = PermissionWithRolesDTO
+        .fromObject(typedQuery.getSingleResult());
+
+    return resource;
+  }
+
+  @Override
+  @Transactional
+  @CachePut(cacheNames = "permission_roles_cache", key = "#id")
+  public void attachRoles(String id, AttachRolesRequest attachRolesRequest) {
     Permission permission = entityManager.find(Permission.class, id);
 
     if (permission == null) {
@@ -548,23 +514,12 @@ public class PermissionRepository implements IPermission {
 
     entityManager.persist(permission);
     entityManager.flush();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        "Successfully attach relation with selected roles.",
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", attachRolesRequest.roleIds()));
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> detachRoles(String id, DetachRolesRequest detachRolesRequest,
-      HttpServletRequest httpServletRequest) {
-    LOG.info("Detaching relation with permissions...");
-
+  @CachePut(cacheNames = "permission_roles_cache", key = "#id")
+  public void detachRoles(String id, DetachRolesRequest detachRolesRequest) {
     Permission permission = entityManager.find(Permission.class, id);
 
     if (permission == null) {
@@ -587,23 +542,12 @@ public class PermissionRepository implements IPermission {
     entityManager.merge(permission);
     entityManager.flush();
     entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        "Successfully detach relation with selected roles.",
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", detachRolesRequest.roleIds()));
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "permissions_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> syncRoles(String id, SyncRolesRequest syncRolesRequest,
-      HttpServletRequest httpServletRequest) {
-    LOG.info("Attaching relation with roles...");
-
+  @CachePut(cacheNames = "permission_roles_cache", key = "#id")
+  public void syncRoles(String id, SyncRolesRequest syncRolesRequest) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
     // CHECK THE ROLES IDS FIRST.
@@ -640,13 +584,5 @@ public class PermissionRepository implements IPermission {
     entityManager.merge(permission);
     entityManager.flush();
     entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        "Successfully attach relation with selected roles.",
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of("ids", syncRolesRequest.roleIds()));
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
   }
 }

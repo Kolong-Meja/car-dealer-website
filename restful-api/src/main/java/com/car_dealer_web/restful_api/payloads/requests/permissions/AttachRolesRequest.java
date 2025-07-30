@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 
 public record AttachRolesRequest(List<String> roleIds) {
   public AttachRolesRequest(
-      List<@Size(max = 20) @NotBlank(message = "permission id cannot be blank.") String> roleIds) {
-    this.roleIds = Objects.requireNonNull(roleIds, "permission id cannot be null.");
+      List<@Size(max = 20) @NotBlank(message = "role id cannot be blank.") String> roleIds) {
+    this.roleIds = Objects.requireNonNull(roleIds, "role id cannot be null.");
   }
 }

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.car_dealer_web.restful_api.annotations.RateLimit;
-import com.car_dealer_web.restful_api.dtos.joins.UserJoinDTO;
+import com.car_dealer_web.restful_api.dtos.users.UserJoinDTO;
 import com.car_dealer_web.restful_api.interfaces.IUser;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;

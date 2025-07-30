@@ -1,11 +1,11 @@
-package com.car_dealer_web.restful_api.dtos.joins;
+package com.car_dealer_web.restful_api.dtos.roles;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 import jakarta.persistence.Tuple;
 
-public record PermissionJoinDTO(
+public record RoleJoinDTO(
     String id,
     String name,
     String description,
@@ -23,11 +23,11 @@ public record PermissionJoinDTO(
     String userAccountStatus,
     String userActiveStatus,
     String userAvatarUrl,
-    String roleId,
-    String roleName,
-    String roleDescription,
-    String roleStatus) {
-  public PermissionJoinDTO(
+    String permissionId,
+    String permissionName,
+    String permissionDescription,
+    String permissionStatus) {
+  public RoleJoinDTO(
       String id,
       String name,
       String description,
@@ -45,10 +45,10 @@ public record PermissionJoinDTO(
       String userAccountStatus,
       String userActiveStatus,
       String userAvatarUrl,
-      String roleId,
-      String roleName,
-      String roleDescription,
-      String roleStatus) {
+      String permissionId,
+      String permissionName,
+      String permissionDescription,
+      String permissionStatus) {
     this.id = Objects.requireNonNull(id, "id cannot be null.");
     this.name = Objects.requireNonNull(name, "name cannot be null.");
     this.description = description;
@@ -66,15 +66,15 @@ public record PermissionJoinDTO(
     this.userAccountStatus = Objects.requireNonNull(userAccountStatus, "user account status cannot be null.");
     this.userActiveStatus = Objects.requireNonNull(userActiveStatus, "user active status cannot be null.");
     this.userAvatarUrl = userAvatarUrl;
-    this.roleId = Objects.requireNonNull(roleId, "role id cannot be null.");
-    this.roleName = Objects.requireNonNull(roleName, "role name cannot be null.");
-    this.roleDescription = roleDescription;
-    this.roleStatus = roleStatus;
+    this.permissionId = Objects.requireNonNull(permissionId, "permission id cannot be null.");
+    this.permissionName = Objects.requireNonNull(permissionName, "permission name cannot be null.");
+    this.permissionDescription = permissionDescription;
+    this.permissionStatus = permissionStatus;
   }
 
-  public static final PermissionJoinDTO fromTuple(Tuple tuple) {
-    return new PermissionJoinDTO(
-        // PERMISSION COLUMNS.
+  public static final RoleJoinDTO fromTuple(Tuple tuple) {
+    return new RoleJoinDTO(
+        // ROLE COLUMNS.
         tuple.get("id", String.class),
         tuple.get("name", String.class),
         tuple.get("description", String.class),
@@ -95,10 +95,10 @@ public record PermissionJoinDTO(
         tuple.get("user_active_status", String.class),
         tuple.get("user_avatar_url", String.class),
 
-        // ROLE COLUMNS.
-        tuple.get("role_id", String.class),
-        tuple.get("role_name", String.class),
-        tuple.get("role_description", String.class),
-        tuple.get("role_status", String.class));
+        // PERMISSION COLUMNS.
+        tuple.get("permission_id", String.class),
+        tuple.get("permission_name", String.class),
+        tuple.get("permission_description", String.class),
+        tuple.get("permission_status", String.class));
   }
 }
