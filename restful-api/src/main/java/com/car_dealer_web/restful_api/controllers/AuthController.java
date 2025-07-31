@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.car_dealer_web.restful_api.annotations.RateLimit;
-import com.car_dealer_web.restful_api.interfaces.IAuth;
+import com.car_dealer_web.restful_api.interfaces.IAuthService;
 import com.car_dealer_web.restful_api.payloads.requests.auth.LoginRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RefreshAuthTokenRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RegisterRequest;
@@ -20,37 +20,45 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/v1/auth")
 public class AuthController {
-  private final IAuth iAuth;
+  private final IAuthService iAuthService;
 
-  public AuthController(IAuth iAuth) {
-    this.iAuth = iAuth;
+  public AuthController(IAuthService iAuthService) {
+    this.iAuthService = iAuthService;
   }
 
-  @PostMapping("/login")
   @RateLimit
+  @PostMapping("/login")
   public ResponseEntity<ApiResponse<Object>> login(@Valid @RequestBody(required = true) LoginRequest loginRequest,
       HttpServletRequest httpServletRequest) {
-    return iAuth.login(loginRequest, httpServletRequest);
+    ApiResponse<Object> result = iAuthService.signIn(loginRequest, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
-  @PostMapping("/register")
   @RateLimit
+  @PostMapping("/register")
   public ResponseEntity<ApiResponse<Object>> register(
       @Valid @RequestBody(required = true) RegisterRequest registerRequest, HttpServletRequest httpServletRequest) {
-    return iAuth.register(registerRequest, httpServletRequest);
+    ApiResponse<Object> result = iAuthService.createNewUser(registerRequest, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
+  @RateLimit
   @GetMapping("/me")
-  @RateLimit
   public ResponseEntity<ApiResponse<Object>> me(HttpServletRequest httpServletRequest) {
-    return iAuth.me(httpServletRequest);
+    ApiResponse<Object> result = iAuthService.fetchSelf(httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 
-  @PostMapping("/refresh")
   @RateLimit
+  @PostMapping("/refresh")
   public ResponseEntity<ApiResponse<Object>> refresh(
       @Valid @RequestBody(required = true) RefreshAuthTokenRequest refreshAuthTokenRequest,
       HttpServletRequest httpServletRequest) {
-    return iAuth.refresh(refreshAuthTokenRequest, httpServletRequest);
+    ApiResponse<Object> result = iAuthService.refreshAccessToken(refreshAuthTokenRequest, httpServletRequest);
+
+    return ResponseEntity.status(result.status()).body(result);
   }
 }

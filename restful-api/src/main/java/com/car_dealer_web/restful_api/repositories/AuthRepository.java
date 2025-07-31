@@ -9,14 +9,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,8 +35,6 @@ import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.auth.LoginRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RefreshAuthTokenRequest;
 import com.car_dealer_web.restful_api.payloads.requests.auth.RegisterRequest;
-import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
-import com.car_dealer_web.restful_api.utils.DateTime;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
@@ -75,10 +72,7 @@ public class AuthRepository implements IAuth {
 
   @Override
   @Transactional
-  public ResponseEntity<ApiResponse<Object>> register(RegisterRequest registerRequest,
-      HttpServletRequest httpServletRequest) {
-    LOG.info("Registering new user...");
-
+  public Object register(RegisterRequest registerRequest) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Role> selectQuery = builder.createQuery(Role.class);
     Root<Role> selectRoleRoot = selectQuery.from(Role.class);
@@ -122,25 +116,16 @@ public class AuthRepository implements IAuth {
     tokens.put("access_token", jwt);
     tokens.put("refresh_token", refreshToken);
 
-    var resource = new HashMap<String, Object>();
+    Map<String, Object> resource = new HashMap<>();
     resource.put("tokens", tokens);
     resource.put("type", "bearer");
 
-    // SETUP THE API (JSON) RESPONSE.
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.CREATED.value(), true, "Successfully registering new user.",
-        DateTime.now(),
-        httpServletRequest.getRequestURI(),
-        resource);
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.CREATED);
+    return resource;
+    // return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   @Override
-  public ResponseEntity<ApiResponse<Object>> login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Doing login as %s", loginRequest.email()));
-
+  public Object login(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
     authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password()));
     var user = iUser.findOneByEmail(loginRequest.email())
@@ -153,25 +138,16 @@ public class AuthRepository implements IAuth {
     tokens.put("access_token", jwt);
     tokens.put("refresh_token", refreshToken);
 
-    var resource = new HashMap<String, Object>();
+    Map<String, Object> resource = new HashMap<>();
     resource.put("tokens", tokens);
     resource.put("type", "bearer");
 
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Login is success. Welcome back %s", loginRequest.email()),
-        DateTime.now(),
-        httpServletRequest.getRequestURI(),
-        resource);
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return resource;
+    // return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
-  public ResponseEntity<ApiResponse<Object>> me(HttpServletRequest request) {
-    LOG.info("Checking user data by passing JWT.");
-
+  public Object me(HttpServletRequest request) {
     final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
@@ -202,7 +178,7 @@ public class AuthRepository implements IAuth {
         .toLocalDateTime()
         .format(formatter);
 
-    var resource = new HashMap<String, Object>();
+    Map<String, Object> resource = new HashMap<>();
     resource.put("data", data);
     resource.put("current_time", now.toEpochSecond(ZoneOffset.UTC));
     resource.put("current_datetime", now
@@ -210,22 +186,13 @@ public class AuthRepository implements IAuth {
     resource.put("token_expired_time", tokenExpiredTime);
     resource.put("token_expired_at", tokenExpiredAt);
 
-    // SETUP THE API (JSON) RESPONSE.
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully fetch personal data.",
-        now.format(formatter),
-        request.getRequestURI(),
-        resource);
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return resource;
+    // return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
-  public ResponseEntity<ApiResponse<Object>> refresh(RefreshAuthTokenRequest refreshAuthTokenRequest,
+  public Object refresh(RefreshAuthTokenRequest refreshAuthTokenRequest,
       HttpServletRequest httpServletRequest) {
-    LOG.info("Refreshing auth token...");
-
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
     final String refreshToken = refreshAuthTokenRequest.refreshToken();
 
@@ -248,16 +215,11 @@ public class AuthRepository implements IAuth {
     }
 
     var newJwt = jwtAuthHandler.generateToken(user);
-    var resource = new HashMap<String, Object>();
+    Map<String, Object> resource = new HashMap<>();
     resource.put("access_token", newJwt);
     resource.put("type", "bearer");
 
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true, "Successfully refresh auth token.",
-        DateTime.now(), httpServletRequest.getRequestURI(), resource);
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return resource;
+    // return new ResponseEntity<>(response, HttpStatus.OK);
   }
-
 }
