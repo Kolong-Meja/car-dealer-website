@@ -45,7 +45,7 @@ public class AuthService implements IAuthService {
 
   @Override
   public ApiResponse<Object> signIn(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("%s: doing login as %s.", getClass().getSimpleName()), loginRequest.email());
+    LOG.info(String.format("%s: doing login as %s.", getClass().getSimpleName(), loginRequest.email()));
 
     var resource = iAuth.login(loginRequest, httpServletRequest);
 

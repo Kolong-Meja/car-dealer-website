@@ -121,7 +121,6 @@ public class AuthRepository implements IAuth {
     resource.put("type", "bearer");
 
     return resource;
-    // return new ResponseEntity<>(response, HttpStatus.CREATED);
   }
 
   @Override
@@ -143,7 +142,6 @@ public class AuthRepository implements IAuth {
     resource.put("type", "bearer");
 
     return resource;
-    // return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
@@ -187,7 +185,6 @@ public class AuthRepository implements IAuth {
     resource.put("token_expired_at", tokenExpiredAt);
 
     return resource;
-    // return new ResponseEntity<>(response, HttpStatus.OK);
   }
 
   @Override
@@ -220,6 +217,5 @@ public class AuthRepository implements IAuth {
     resource.put("type", "bearer");
 
     return resource;
-    // return new ResponseEntity<>(response, HttpStatus.OK);
   }
 }
