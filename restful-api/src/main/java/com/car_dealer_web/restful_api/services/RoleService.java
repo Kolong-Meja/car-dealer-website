@@ -1,4 +1,4 @@
-package com.car_dealer_web.services;
+package com.car_dealer_web.restful_api.services;
 
 import java.util.Map;
 

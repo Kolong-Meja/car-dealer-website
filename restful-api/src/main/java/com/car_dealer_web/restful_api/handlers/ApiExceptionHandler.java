@@ -7,12 +7,14 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.car_dealer_web.restful_api.exceptions.BadGatewayException;
@@ -33,6 +35,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
+@RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 public class ApiExceptionHandler {
   private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
@@ -215,6 +218,18 @@ public class ApiExceptionHandler {
 
   @ExceptionHandler(ServiceUnavailableException.class)
   public ResponseEntity<ApiResponse<Object>> handleBadGateway(ServiceUnavailableException exception,
+      HttpServletRequest httpServletRequest) {
+    LOG.error(exception.getMessage(), exception);
+
+    final ApiResponse<Object> response = new ApiResponse<Object>(HttpStatus.SERVICE_UNAVAILABLE.value(), false,
+        exception.getMessage(),
+        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
+
+    return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ApiResponse<Object>> handleOtherException(Exception exception,
       HttpServletRequest httpServletRequest) {
     LOG.error(exception.getMessage(), exception);
 

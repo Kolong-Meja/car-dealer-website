@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Repository;
 
@@ -249,7 +250,11 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CachePut(value = "roles_cache", key = "#role.id")
+  @Caching(put = {
+      @CachePut(cacheNames = "roles_cache", key = "#role.id")
+  }, evict = {
+      @CacheEvict(cacheNames = "roles_cache", key = "'all'")
+  })
   public Role save(CreateRoleRequest createRoleRequest) {
     Role role = new Role();
     role.setName(createRoleRequest.name());
@@ -264,7 +269,11 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @Caching(put = {
+      @CachePut(cacheNames = "roles_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "roles_cache", key = "'all'")
+  })
   public int update(String id, UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
@@ -312,7 +321,11 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @Caching(put = {
+      @CachePut(cacheNames = "roles_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "roles_cache", key = "'all'")
+  })
   public int restore(String id, HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -360,7 +373,11 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @Caching(put = {
+      @CachePut(cacheNames = "roles_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "roles_cache", key = "'all'")
+  })
   public int delete(String id, HttpServletRequest httpServletRequest) {
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
@@ -406,7 +423,10 @@ public class RoleRepository implements IRole {
 
   @Override
   @Transactional
-  @CacheEvict(value = "roles_cache", key = "#id")
+  @Caching(evict = {
+      @CacheEvict(cacheNames = "roles_cache", key = "#id"),
+      @CacheEvict(cacheNames = "roles_cache", key = "'all'")
+  })
   public int forceDelete(String id) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaDelete<Role> criteriaDelete = builder.createCriteriaDelete(Role.class);
@@ -425,6 +445,8 @@ public class RoleRepository implements IRole {
   }
 
   @Override
+  @Transactional
+  @Cacheable(value = "role_permissions_cache", key = "#id")
   public RoleWithPermissionsDTO fetchPermissions(String id) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaQuery<Role> selectQuery = builder.createQuery(Role.class);

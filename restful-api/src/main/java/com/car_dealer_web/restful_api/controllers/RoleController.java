@@ -52,7 +52,8 @@ public class RoleController {
 
   @RateLimit
   @GetMapping("/{id}")
-  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(@PathVariable String id,
+  public ResponseEntity<ApiResponse<RoleJoinDTO>> findOne(
+      @PathVariable String id,
       HttpServletRequest httpServletRequest) {
     ApiResponse<RoleJoinDTO> result = iRoleService.getOneRole(id, httpServletRequest);
 
@@ -70,7 +71,8 @@ public class RoleController {
 
   @RateLimit
   @PatchMapping("/{id}")
-  public ResponseEntity<ApiResponse<Object>> update(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> update(
+      @PathVariable String id,
       @Valid @RequestBody(required = false) UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.modifyRole(id, updateRoleRequest, httpServletRequest);
@@ -79,21 +81,26 @@ public class RoleController {
   }
 
   @PatchMapping("/{id}/restore")
-  public ResponseEntity<ApiResponse<Object>> restore(@PathVariable String id, HttpServletRequest httpServletRequest) {
+  public ResponseEntity<ApiResponse<Object>> restore(
+      @PathVariable String id,
+      HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.restoreRole(id, httpServletRequest);
 
     return ResponseEntity.status(result.status()).body(result);
   }
 
   @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Object>> delete(@PathVariable String id, HttpServletRequest httpServletRequest) {
+  public ResponseEntity<ApiResponse<Object>> delete(
+      @PathVariable String id,
+      HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.deleteRole(id, httpServletRequest);
 
     return ResponseEntity.status(result.status()).body(result);
   }
 
   @DeleteMapping("/{id}/force")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> forceDelete(
+      @PathVariable String id,
       HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.forceDeleteRole(id, httpServletRequest);
 
@@ -102,7 +109,8 @@ public class RoleController {
 
   @RateLimit
   @GetMapping("/{id}/permissions")
-  public ResponseEntity<ApiResponse<RoleWithPermissionsDTO>> fetchPermissions(String id,
+  public ResponseEntity<ApiResponse<RoleWithPermissionsDTO>> fetchPermissions(
+      @PathVariable String id,
       HttpServletRequest httpServletRequest) {
     ApiResponse<RoleWithPermissionsDTO> result = iRoleService.getOneRoleWithPermissions(id, httpServletRequest);
 
@@ -110,7 +118,8 @@ public class RoleController {
   }
 
   @PostMapping("/{id}/permissions")
-  public ResponseEntity<ApiResponse<Object>> attachPermissions(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> attachPermissions(
+      @PathVariable String id,
       @Valid @RequestBody(required = true) AttachPermissionsRequest attachPermissionsRequest,
       HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.attachOneRoleWithPermissions(id, attachPermissionsRequest,
@@ -120,7 +129,8 @@ public class RoleController {
   }
 
   @PutMapping("/{id}/permissions/detach")
-  public ResponseEntity<ApiResponse<Object>> detachPermissions(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> detachPermissions(
+      @PathVariable String id,
       @Valid @RequestBody(required = true) DetachPermissionsRequest detachPermissionsRequest,
       HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.detachOneRoleWithPermissions(id, detachPermissionsRequest,
@@ -130,7 +140,8 @@ public class RoleController {
   }
 
   @PutMapping("/{id}/permissions")
-  public ResponseEntity<ApiResponse<Object>> syncPermissions(@PathVariable String id,
+  public ResponseEntity<ApiResponse<Object>> syncPermissions(
+      @PathVariable String id,
       @Valid @RequestBody(required = true) SyncPermissionsRequest syncPermissionsRequest,
       HttpServletRequest httpServletRequest) {
     ApiResponse<Object> result = iRoleService.syncOneRoleWithPermissions(id, syncPermissionsRequest,
