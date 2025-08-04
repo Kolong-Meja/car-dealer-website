@@ -40,7 +40,7 @@ public class RoleService implements IRoleService {
   @Override
   public ApiResponse<PaginationResponse<RoleJoinDTO>> getAllRoles(SearchRequest searchRequest,
       PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("%s: processing request to get all roles data.", getClass().getSimpleName()));
+    LOG.info(String.format("%s: Processing request to get all roles data.", getClass().getSimpleName()));
 
     try {
       PaginationResponse<RoleJoinDTO> resource = iRole.findAll(searchRequest, paginationRequest);
@@ -62,7 +62,7 @@ public class RoleService implements IRoleService {
   @Override
   public ApiResponse<RoleJoinDTO> getOneRole(String id, HttpServletRequest httpServletRequest) {
     LOG.info(
-        String.format("%s: processing request to get one role with ID %s data.", getClass().getSimpleName(), id));
+        String.format("%s: Processing request to get one role with ID %s data.", getClass().getSimpleName(), id));
 
     try {
       RoleJoinDTO resource = iRole.findOne(id);
@@ -85,7 +85,7 @@ public class RoleService implements IRoleService {
   @Override
   public ApiResponse<Role> createNewRole(CreateRoleRequest createRoleRequest, HttpServletRequest httpServletRequest) {
     LOG.info(
-        String.format("%s: processing request to create one role.", getClass().getSimpleName()));
+        String.format("%s: Processing request to create one role.", getClass().getSimpleName()));
 
     Role resource = iRole.save(createRoleRequest);
 
@@ -102,6 +102,9 @@ public class RoleService implements IRoleService {
   @Override
   public ApiResponse<Object> modifyRole(String id, UpdateRoleRequest updateRoleRequest,
       HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to update one role data with ID %s.", getClass().getSimpleName(), id));
+
     int updatedRows = iRole.update(id, updateRoleRequest, httpServletRequest);
 
     if (updatedRows != 1) {
@@ -125,6 +128,9 @@ public class RoleService implements IRoleService {
 
   @Override
   public ApiResponse<Object> restoreRole(String id, HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to restore one user data with ID %s.", getClass().getSimpleName(), id));
+
     int restoredRows = iRole.restore(id, httpServletRequest);
 
     if (restoredRows != 1) {
@@ -148,6 +154,9 @@ public class RoleService implements IRoleService {
 
   @Override
   public ApiResponse<Object> deleteRole(String id, HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to delete one user data with ID %s.", getClass().getSimpleName(), id));
+
     int deletedRows = iRole.delete(id, httpServletRequest);
 
     if (deletedRows != 1) {
@@ -171,6 +180,10 @@ public class RoleService implements IRoleService {
 
   @Override
   public ApiResponse<Object> forceDeleteRole(String id, HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to force delete one user data with ID %s.", getClass().getSimpleName(),
+            id));
+
     int forceDeleteRows = iRole.forceDelete(id);
 
     if (forceDeleteRows != 1) {

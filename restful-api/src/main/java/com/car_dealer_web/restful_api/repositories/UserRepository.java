@@ -5,16 +5,15 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 
 import com.car_dealer_web.restful_api.dtos.users.UserDTO;
@@ -31,9 +30,7 @@ import com.car_dealer_web.restful_api.models.User;
 import com.car_dealer_web.restful_api.payloads.requests.PaginationRequest;
 import com.car_dealer_web.restful_api.payloads.requests.SearchRequest;
 import com.car_dealer_web.restful_api.payloads.requests.users.UpdateUserRequest;
-import com.car_dealer_web.restful_api.payloads.responses.ApiResponse;
 import com.car_dealer_web.restful_api.payloads.responses.PaginationResponse;
-import com.car_dealer_web.restful_api.utils.DateTime;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -78,218 +75,188 @@ public class UserRepository implements IUser {
   }
 
   @Override
-  @Cacheable(value = "users_cache")
-  public ResponseEntity<ApiResponse<PaginationResponse<UserJoinDTO>>> findAll(SearchRequest searchRequest,
-      PaginationRequest paginationRequest, HttpServletRequest httpServletRequest) {
-    LOG.info("Fetching all user entity resources...");
+  @Cacheable(value = "users_cache", key = "'all'")
+  public PaginationResponse<UserJoinDTO> findAll(SearchRequest searchRequest,
+      PaginationRequest paginationRequest) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
 
-    try {
-      CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    // ------------------COUNT QUERY-----------------------
+    CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
+    Root<User> countUserRoot = countQuery.from(User.class);
+    Join<User, Role> countJoinWithRole = countUserRoot.join("roles", JoinType.INNER);
+    List<Predicate> countPredicates = new ArrayList<>();
 
-      // ------------------COUNT QUERY-----------------------
-      CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);
-      Root<User> countUserRoot = countQuery.from(User.class);
-      Join<User, Role> countJoinWithRole = countUserRoot.join("roles", JoinType.INNER);
-      List<Predicate> countPredicates = new ArrayList<>();
+    // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
+    countPredicates.add(
+        builder.not(countJoinWithRole.get("name").in("admin", "super admin")));
 
-      // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
-      countPredicates.add(
-          builder.not(countJoinWithRole.get("name").in("admin", "super admin")));
+    // WHERE DELETED_AT IS NULL.
+    countPredicates.add(builder.isNull(countUserRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      countPredicates.add(builder.isNull(countUserRoot.get("deleted_at")));
+    // CASE WHEN SEARCH REQUEST INCLUDED.
+    searchRequestPredicate(searchRequest, countPredicates, builder, countUserRoot,
+        Arrays.asList("fullname", "email", "phone_number"));
 
-      // CASE WHEN SEARCH REQUEST INCLUDED.
-      searchRequestPredicate(searchRequest, countPredicates, builder, countUserRoot,
-          Arrays.asList("fullname", "email", "phone_number"));
+    countQuery.select(builder.countDistinct(countUserRoot))
+        .where(builder.and(countPredicates.toArray(Predicate[]::new)));
+    Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
 
-      countQuery.select(builder.countDistinct(countUserRoot))
-          .where(builder.and(countPredicates.toArray(Predicate[]::new)));
-      Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
+    // ------------------SELECT QUERY------------------------
+    CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
+    Root<User> selectUserRoot = selectQuery.from(User.class);
+    Join<User, Role> selectJoinWithRole = selectUserRoot.join("roles", JoinType.INNER);
+    Join<Role, Permission> selectJoinWithPermission = selectUserRoot.join("permissions", JoinType.INNER);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-      // ------------------SELECT QUERY------------------------
-      CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<User> selectUserRoot = selectQuery.from(User.class);
-      Join<User, Role> selectJoinWithRole = selectUserRoot.join("roles", JoinType.INNER);
-      Join<Role, Permission> selectJoinWithPermission = selectUserRoot.join("permissions", JoinType.INNER);
-      List<Predicate> selectPredicates = new ArrayList<>();
+    // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
+    selectPredicates.add(builder
+        .not(selectJoinWithRole.get("name").in("admin", "super admin")));
 
-      // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
-      selectPredicates.add(builder
-          .not(selectJoinWithRole.get("name").in("admin", "super admin")));
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectUserRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectUserRoot.get("deleted_at")));
+    // CASE WHEN SEARCH REQUEST INCLUDED.
+    searchRequestPredicate(searchRequest, selectPredicates, builder, selectUserRoot,
+        Arrays.asList("fullname", "email", "phone_number"));
 
-      // CASE WHEN SEARCH REQUEST INCLUDED.
-      searchRequestPredicate(searchRequest, selectPredicates, builder, selectUserRoot,
-          Arrays.asList("fullname", "email", "phone_number"));
+    selectQuery.multiselect(
+        // USERS SELECTED COLUMNS.
+        selectUserRoot.get("id").alias("id"),
+        selectUserRoot.get("fullname").alias("fullname"),
+        selectUserRoot.get("bio").alias("bio"),
+        selectUserRoot.get("email").alias("email"),
+        selectUserRoot.get("phone_number").alias("phone_number"),
+        selectUserRoot.get("address").alias("address"),
+        selectUserRoot.get("account_status").alias("account_status"),
+        selectUserRoot.get("active_status").alias("active_status"),
+        selectUserRoot.get("avatar_url").alias("avatar_url"),
+        selectUserRoot.get("last_login_at").alias("last_login_at"),
+        selectUserRoot.get("last_edited_by").alias("last_edited_by"),
+        selectUserRoot.get("created_at").alias("created_at"),
+        selectUserRoot.get("updated_at").alias("updated_at"),
+        selectUserRoot.get("deleted_at").alias("deleted_at"),
 
-      selectQuery.multiselect(
-          // USERS SELECTED COLUMNS.
-          selectUserRoot.get("id").alias("id"),
-          selectUserRoot.get("fullname").alias("fullname"),
-          selectUserRoot.get("bio").alias("bio"),
-          selectUserRoot.get("email").alias("email"),
-          selectUserRoot.get("phone_number").alias("phone_number"),
-          selectUserRoot.get("address").alias("address"),
-          selectUserRoot.get("account_status").alias("account_status"),
-          selectUserRoot.get("active_status").alias("active_status"),
-          selectUserRoot.get("avatar_url").alias("avatar_url"),
-          selectUserRoot.get("last_login_at").alias("last_login_at"),
-          selectUserRoot.get("last_edited_by").alias("last_edited_by"),
-          selectUserRoot.get("created_at").alias("created_at"),
-          selectUserRoot.get("updated_at").alias("updated_at"),
-          selectUserRoot.get("deleted_at").alias("deleted_at"),
+        // ROLES SELECTED COLUMNS.
+        selectJoinWithRole.get("id").alias("role_id"),
+        selectJoinWithRole.get("name").alias("role_name"),
+        selectJoinWithRole.get("description").alias("role_description"),
+        selectJoinWithRole.get("status").alias("role_status"),
 
-          // ROLES SELECTED COLUMNS.
-          selectJoinWithRole.get("id").alias("role_id"),
-          selectJoinWithRole.get("name").alias("role_name"),
-          selectJoinWithRole.get("description").alias("role_description"),
-          selectJoinWithRole.get("status").alias("role_status"),
+        // PERMISSION SELECTED COLUMNS
+        selectJoinWithPermission.get("id").alias("permission_id"),
+        selectJoinWithPermission.get("name").alias("permission_name"),
+        selectJoinWithPermission.get("description").alias("permission_description"),
+        selectJoinWithPermission.get("status").alias("permission_status"))
+        .distinct(true)
+        .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
 
-          // PERMISSION SELECTED COLUMNS
-          selectJoinWithPermission.get("id").alias("permission_id"),
-          selectJoinWithPermission.get("name").alias("permission_name"),
-          selectJoinWithPermission.get("description").alias("permission_description"),
-          selectJoinWithPermission.get("status").alias("permission_status"))
-          .distinct(true)
-          .where(builder.and(selectPredicates.toArray(Predicate[]::new)));
-
-      // SORT DATA.
-      if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
-        selectQuery.orderBy(
-            builder.asc(selectUserRoot.get(paginationRequest.sortField())));
-      } else {
-        selectQuery.orderBy(
-            builder.desc(selectUserRoot.get(paginationRequest.sortField())));
-      }
-
-      TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-
-      // OFFSET DATA.
-      typedQuery.setFirstResult((paginationRequest.page() - 1) * paginationRequest.size());
-
-      // LIMIT DATA.
-      typedQuery.setMaxResults(paginationRequest.size());
-
-      // CONVERT INTO DTO.
-      List<Tuple> result = typedQuery.getResultList();
-      List<UserJoinDTO> userJoinWithOthers = result.stream()
-          .map(UserJoinDTO::fromTuple)
-          .toList();
-
-      // SETUP PAGINATION RESPONSE.
-      var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
-      var hasNext = paginationRequest.page() < totalPages;
-      PaginationResponse<UserJoinDTO> resource = new PaginationResponse<>(
-          userJoinWithOthers,
-          totalPages,
-          totalElements,
-          paginationRequest.size(),
-          paginationRequest.page(),
-          hasNext);
-
-      ApiResponse<PaginationResponse<UserJoinDTO>> response = new ApiResponse<>(
-          HttpStatus.OK.value(),
-          true,
-          "Succesfully fetch users.",
-          DateTime.now(),
-          httpServletRequest.getRequestURI(),
-          resource);
-
-      LOG.info(response.message());
-
-      return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoResultException e) {
-      LOG.error(e.getMessage());
-
-      throw new ResourceNotFoundException(e.getMessage());
+    // SORT DATA.
+    if (!"desc".equalsIgnoreCase(paginationRequest.direction())) {
+      selectQuery.orderBy(
+          builder.asc(selectUserRoot.get(paginationRequest.sortField())));
+    } else {
+      selectQuery.orderBy(
+          builder.desc(selectUserRoot.get(paginationRequest.sortField())));
     }
+
+    TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
+
+    // OFFSET DATA.
+    typedQuery.setFirstResult((paginationRequest.page() - 1) * paginationRequest.size());
+
+    // LIMIT DATA.
+    typedQuery.setMaxResults(paginationRequest.size());
+
+    // CONVERT INTO DTO.
+    List<Tuple> result = typedQuery.getResultList();
+    List<UserJoinDTO> userJoinWithOthers = result.stream()
+        .map(UserJoinDTO::fromTuple)
+        .toList();
+
+    // SETUP PAGINATION RESPONSE.
+    var totalPages = (int) Math.ceil((double) totalElements / paginationRequest.size());
+    var hasNext = paginationRequest.page() < totalPages;
+    PaginationResponse<UserJoinDTO> resource = new PaginationResponse<>(
+        userJoinWithOthers,
+        totalPages,
+        totalElements,
+        paginationRequest.size(),
+        paginationRequest.page(),
+        hasNext);
+
+    return resource;
   }
 
   @Override
   @Cacheable(value = "users_cache", key = "#id")
-  public ResponseEntity<ApiResponse<UserJoinDTO>> findOne(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Fetching user entity with ID %s resource...", id));
+  public UserJoinDTO findOne(String id) {
+    CriteriaBuilder builder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
+    Root<User> selectUserRoot = selectQuery.from(User.class);
+    Join<User, Role> selectJoinWithRole = selectUserRoot.join("roles", JoinType.INNER);
+    Join<Role, Permission> selectJoinWithPermission = selectUserRoot.join("permissions", JoinType.INNER);
+    List<Predicate> selectPredicates = new ArrayList<>();
 
-    try {
-      CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-      CriteriaQuery<Tuple> selectQuery = builder.createQuery(Tuple.class);
-      Root<User> selectUserRoot = selectQuery.from(User.class);
-      Join<User, Role> selectJoinWithRole = selectUserRoot.join("roles", JoinType.INNER);
-      Join<Role, Permission> selectJoinWithPermission = selectUserRoot.join("permissions", JoinType.INNER);
-      List<Predicate> selectPredicates = new ArrayList<>();
+    // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
+    selectPredicates.add(builder
+        .not(selectJoinWithRole.get("name").in("admin", "super admin")));
 
-      // WHERE USER NOT IN ROLE ADMIN AND SUPER ADMIN.
-      selectPredicates.add(builder
-          .not(selectJoinWithRole.get("name").in("admin", "super admin")));
+    // WHERE DELETED_AT IS NULL.
+    selectPredicates.add(builder.isNull(selectUserRoot.get("deleted_at")));
 
-      // WHERE DELETED_AT IS NULL.
-      selectPredicates.add(builder.isNull(selectUserRoot.get("deleted_at")));
+    selectQuery.multiselect(
+        // USERS SELECTED COLUMNS.
+        selectUserRoot.get("id").alias("id"),
+        selectUserRoot.get("fullname").alias("fullname"),
+        selectUserRoot.get("bio").alias("bio"),
+        selectUserRoot.get("email").alias("email"),
+        selectUserRoot.get("phone_number").alias("phone_number"),
+        selectUserRoot.get("address").alias("address"),
+        selectUserRoot.get("account_status").alias("account_status"),
+        selectUserRoot.get("active_status").alias("active_status"),
+        selectUserRoot.get("avatar_url").alias("avatar_url"),
+        selectUserRoot.get("last_login_at").alias("last_login_at"),
+        selectUserRoot.get("created_at").alias("created_at"),
+        selectUserRoot.get("updated_at").alias("updated_at"),
+        selectUserRoot.get("deleted_at").alias("deleted_at"),
 
-      selectQuery.multiselect(
-          // USERS SELECTED COLUMNS.
-          selectUserRoot.get("id").alias("id"),
-          selectUserRoot.get("fullname").alias("fullname"),
-          selectUserRoot.get("bio").alias("bio"),
-          selectUserRoot.get("email").alias("email"),
-          selectUserRoot.get("phone_number").alias("phone_number"),
-          selectUserRoot.get("address").alias("address"),
-          selectUserRoot.get("account_status").alias("account_status"),
-          selectUserRoot.get("active_status").alias("active_status"),
-          selectUserRoot.get("avatar_url").alias("avatar_url"),
-          selectUserRoot.get("last_login_at").alias("last_login_at"),
-          selectUserRoot.get("created_at").alias("created_at"),
-          selectUserRoot.get("updated_at").alias("updated_at"),
-          selectUserRoot.get("deleted_at").alias("deleted_at"),
+        // ROLES SELECTED COLUMNS.
+        selectJoinWithRole.get("id").alias("role_id"),
+        selectJoinWithRole.get("name").alias("role_name"),
+        selectJoinWithRole.get("description").alias("role_description"),
+        selectJoinWithRole.get("status").alias("role_status"),
 
-          // ROLES SELECTED COLUMNS.
-          selectJoinWithRole.get("id").alias("role_id"),
-          selectJoinWithRole.get("name").alias("role_name"),
-          selectJoinWithRole.get("description").alias("role_description"),
-          selectJoinWithRole.get("status").alias("role_status"),
+        // PERMISSION SELECTED COLUMNS
+        selectJoinWithPermission.get("id").alias("permission_id"),
+        selectJoinWithPermission.get("name").alias("permission_name"),
+        selectJoinWithPermission.get("description").alias("permission_description"),
+        selectJoinWithPermission.get("status").alias("permission_status"))
+        .distinct(true)
+        .where(builder.and(
+            builder.and(selectPredicates.toArray(Predicate[]::new)),
+            builder.equal(selectUserRoot.get("id"), id)));
 
-          // PERMISSION SELECTED COLUMNS
-          selectJoinWithPermission.get("id").alias("permission_id"),
-          selectJoinWithPermission.get("name").alias("permission_name"),
-          selectJoinWithPermission.get("description").alias("permission_description"),
-          selectJoinWithPermission.get("status").alias("permission_status"))
-          .distinct(true)
-          .where(builder.and(
-              builder.and(selectPredicates.toArray(Predicate[]::new)),
-              builder.equal(selectUserRoot.get("id"), id)));
+    // CONVERT INTO DTO.
+    TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
+    var resource = UserJoinDTO.fromTuple(typedQuery.getSingleResult());
 
-      // CONVERT INTO DTO.
-      TypedQuery<Tuple> typedQuery = entityManager.createQuery(selectQuery);
-      var resource = UserJoinDTO.fromTuple(typedQuery.getSingleResult());
-
-      ApiResponse<UserJoinDTO> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-          String.format("Successfully fetch user with ID %s", id),
-          DateTime.now(),
-          httpServletRequest.getRequestURI(),
-          resource);
-
-      LOG.info(response.message());
-
-      return new ResponseEntity<>(response, HttpStatus.OK);
-    } catch (NoResultException e) {
-      LOG.error(e.getMessage());
-
-      throw new ResourceNotFoundException(e.getMessage());
-    }
+    return resource;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "users_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> update(String id, UpdateUserRequest updateUserRequest,
+  @Caching(put = {
+      @CachePut(cacheNames = "users_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "users_cache", key = "'all'")
+  })
+  public int update(String id, UpdateUserRequest updateUserRequest,
       HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Updating user entity with ID %s...", id));
-
     final String header = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
 
     if (header == null || !header.startsWith("Bearer ")) {
+      LOG.error("Missing or invalid Authorization header", BadRequestException.class);
+
       throw new BadRequestException("Missing or invalid Authorization header.");
     }
 
@@ -300,12 +267,16 @@ public class UserRepository implements IUser {
         .orElseThrow(() -> new ResourceNotFoundException(String.format("User with ID %s not found.", id)));
 
     if (!jwtAuthHandler.isTokenValid(jwt, user)) {
+      LOG.error("Invalid or expired jwt.", UnauthorizedException.class);
+
       throw new UnauthorizedException("Invalid or expired jwt.");
     }
 
     var data = UserDTO.fromObject(user);
 
     if (!data.id().equals(id)) {
+      LOG.error("Access denied. You don't have permission to access this resource.", AccessDeniedException.class);
+
       throw new AccessDeniedException(
           "Access denied. You don't have permission to access this resource.");
     }
@@ -323,30 +294,23 @@ public class UserRepository implements IUser {
     criteriaUpdate.where(builder.equal(userRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("User with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("User with ID %s not found.", id));
+    if (updated > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully update user entity with ID %s.", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return updated;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "users_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> restore(String id, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("Restoring user entity with ID %s...", id));
-
+  @Caching(put = {
+      @CachePut(cacheNames = "users_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "users_cache", key = "'all'")
+  })
+  public int restore(String id, HttpServletRequest httpServletRequest) {
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
     CriteriaUpdate<User> criteriaUpdate = builder.createCriteriaUpdate(User.class);
     Root<User> userRoot = criteriaUpdate.from(User.class);
@@ -357,28 +321,23 @@ public class UserRepository implements IUser {
         builder.isNotNull(userRoot.get("deleted_at"))));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("user with ID %s not found or is not deleted.", id));
 
-      throw new ResourceNotFoundException(String.format("user with ID %s not found or is not deleted.", id));
+    if (updated > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully restore user entity with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return updated;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "users_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> delete(String id, HttpServletRequest httpServletRequest) {
+  @Caching(put = {
+      @CachePut(cacheNames = "users_cache", key = "#id")
+  }, evict = {
+      @CacheEvict(cacheNames = "users_cache", key = "'all'")
+  })
+  public int delete(String id, HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Soft deleting user entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -389,28 +348,22 @@ public class UserRepository implements IUser {
     criteriaUpdate.where(builder.equal(userRoot.get("id"), id));
 
     int updated = entityManager.createQuery(criteriaUpdate).executeUpdate();
-    if (updated != 1) {
-      LOG.error(String.format("user with ID %s not found.", id));
 
-      throw new ResourceNotFoundException(String.format("user with ID %s not found.", id));
+    if (updated > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully soft delete user with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return updated;
   }
 
   @Override
   @Transactional
-  @CacheEvict(value = "users_cache", key = "#id")
-  public ResponseEntity<ApiResponse<Object>> forceDelete(String id, HttpServletRequest httpServletRequest) {
+  @Caching(evict = {
+      @CacheEvict(cacheNames = "users_cache", key = "#id"),
+      @CacheEvict(cacheNames = "users_cache", key = "'all'")
+  })
+  public int forceDelete(String id, HttpServletRequest httpServletRequest) {
     LOG.info(String.format("Force deleting user entity with ID %s...", id));
 
     CriteriaBuilder builder = entityManager.getCriteriaBuilder();
@@ -419,23 +372,14 @@ public class UserRepository implements IUser {
 
     criteriaDelete.where(builder.equal(userRoot.get("id"), id));
 
-    int deletedCount = entityManager.createQuery(criteriaDelete).executeUpdate();
-    if (deletedCount != 1) {
-      LOG.error(String.format("user with ID %s not found.", id));
+    int deleted = entityManager.createQuery(criteriaDelete).executeUpdate();
 
-      throw new ResourceNotFoundException(String.format("user with id %s not found.", id));
+    if (deleted > 0) {
+      entityManager.flush();
+      entityManager.clear();
     }
 
-    entityManager.flush();
-    entityManager.clear();
-
-    ApiResponse<Object> response = new ApiResponse<>(HttpStatus.OK.value(), true,
-        String.format("Successfully force delete user entity with ID %s", id),
-        DateTime.now(), httpServletRequest.getRequestURI(), Map.of());
-
-    LOG.info(response.message());
-
-    return new ResponseEntity<>(response, HttpStatus.OK);
+    return deleted;
   }
 
   @Override

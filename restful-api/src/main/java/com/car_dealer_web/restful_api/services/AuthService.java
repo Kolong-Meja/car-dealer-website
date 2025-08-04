@@ -27,7 +27,7 @@ public class AuthService implements IAuthService {
 
   @Override
   public ApiResponse<Object> createNewUser(RegisterRequest registerRequest, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("%s: registering new user.", getClass().getSimpleName()));
+    LOG.info(String.format("%s: Registering new user.", getClass().getSimpleName()));
 
     var resource = iAuth.register(registerRequest);
 
@@ -45,7 +45,7 @@ public class AuthService implements IAuthService {
 
   @Override
   public ApiResponse<Object> signIn(LoginRequest loginRequest, HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("%s: doing login as %s.", getClass().getSimpleName(), loginRequest.email()));
+    LOG.info(String.format("%s: Doing login as %s.", getClass().getSimpleName(), loginRequest.email()));
 
     var resource = iAuth.login(loginRequest, httpServletRequest);
 
@@ -62,7 +62,7 @@ public class AuthService implements IAuthService {
 
   @Override
   public ApiResponse<Object> fetchSelf(HttpServletRequest request) {
-    LOG.info(String.format("%s: checking user data by passing JWT.", getClass().getSimpleName()));
+    LOG.info(String.format("%s: Checking user data by passing JWT.", getClass().getSimpleName()));
 
     var resource = iAuth.me(request);
 
@@ -80,7 +80,7 @@ public class AuthService implements IAuthService {
   @Override
   public ApiResponse<Object> refreshAccessToken(RefreshAuthTokenRequest refreshAuthTokenRequest,
       HttpServletRequest httpServletRequest) {
-    LOG.info(String.format("%s: refreshing auth or access token.", getClass().getSimpleName()));
+    LOG.info(String.format("%s: Refreshing auth or access token.", getClass().getSimpleName()));
 
     var resource = iAuth.refresh(refreshAuthTokenRequest, httpServletRequest);
 

@@ -87,7 +87,7 @@ public class PermissionService implements IPermissionService {
       CreatePermissionRequest createPermissionRequest,
       HttpServletRequest httpServletRequest) {
     LOG.info(
-        String.format("%s: processing request to create one permission.", getClass().getSimpleName()));
+        String.format("%s: Processing request to create one permission.", getClass().getSimpleName()));
 
     Permission resource = iPermission.save(createPermissionRequest);
 
@@ -106,6 +106,10 @@ public class PermissionService implements IPermissionService {
       String id,
       UpdatePermissionRequest updatePermissionRequest,
       HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to update one permission data with ID %s.", getClass().getSimpleName(),
+            id));
+
     int updatedRows = iPermission.update(id, updatePermissionRequest, httpServletRequest);
 
     if (updatedRows != 1) {
@@ -131,6 +135,9 @@ public class PermissionService implements IPermissionService {
   public ApiResponse<Object> restorePermission(
       String id,
       HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to restore one user data with ID %s.", getClass().getSimpleName(), id));
+
     int restoredRows = iPermission.restore(id, httpServletRequest);
 
     if (restoredRows != 1) {
@@ -156,6 +163,9 @@ public class PermissionService implements IPermissionService {
   public ApiResponse<Object> deletePermission(
       String id,
       HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to delete one user data with ID %s.", getClass().getSimpleName(), id));
+
     int deletedRows = iPermission.delete(id, httpServletRequest);
 
     if (deletedRows != 1) {
@@ -181,6 +191,10 @@ public class PermissionService implements IPermissionService {
   public ApiResponse<Object> forceDeletePermission(
       String id,
       HttpServletRequest httpServletRequest) {
+    LOG.info(
+        String.format("%s: Processing request to force delete one user data with ID %s.", getClass().getSimpleName(),
+            id));
+
     int forceDeleteRows = iPermission.forceDelete(id);
 
     if (forceDeleteRows != 1) {
