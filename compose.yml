@@ -1,0 +1,103 @@
+name: car-dealer-website
+
+services:
+  postgresql:
+    image: postgres:17-alpine
+    container_name: car-dealer-postgresql
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Faisal0809
+      POSTGRES_DB: car_dealer_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - car-dealer-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: car-dealer-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: Faisal0809#
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./config/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    networks:
+      - car-dealer-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: car-dealer-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - car-dealer-network
+
+  car-dealer-backend:
+    image: car-dealer-backend:latest
+    container_name: car-dealer-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/car_dealer_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Faisal0809
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - car-dealer-network
+
+  car-dealer-frontend:
+    image: car-dealer-frontend:latest
+    container_name: car-dealer-frontend
+    restart: no
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: http://car-dealer-backend:8080
+    depends_on:
+      - car-dealer-backend
+    networks:
+      - car-dealer-network
+
+networks:
+  car-dealer-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  pgadmin-data:
+  redis-data:
