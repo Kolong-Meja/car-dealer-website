@@ -1,4 +1,3 @@
-BEGIN
 CREATE TABLE role_privileges (
     role_id bigserial NOT NULL,
     privilege_id bigserial NOT NULL,
@@ -7,4 +6,3 @@ CREATE TABLE role_privileges (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
     FOREIGN KEY (privilege_id) REFERENCES privileges(id) ON DELETE CASCADE
 );
-COMMIT;
