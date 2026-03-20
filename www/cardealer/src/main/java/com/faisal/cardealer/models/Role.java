@@ -110,4 +110,20 @@ public class Role {
     this.updated_at = updated_at;
   }
 
+  public Set<User> getUsers() {
+    return users;
+  }
+
+  public void setUsers(Set<User> users) {
+    this.users = users;
+  }
+
+  public Set<Privileges> getPrivileges() {
+    return privileges;
+  }
+
+  public void setPrivileges(Set<Privileges> privileges) {
+    this.privileges = privileges;
+  }
+
 }
