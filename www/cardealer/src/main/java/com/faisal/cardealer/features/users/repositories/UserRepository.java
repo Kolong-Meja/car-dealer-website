@@ -13,7 +13,7 @@ import com.faisal.cardealer.models.User;
 public interface UserRepository extends JpaRepository<User, String> {
 
   @Query("SELECT u FROM User u WHERE u.email = :email AND u.deletedAt IS NULL")
-  Optional<User> findByActiveEmail(@Param("email") String email);
+  Optional<User> findActiveByEmail(@Param("email") String email);
 
   @Query("SELECT u FROM User u WHERE u.username = :username AND u.deletedAt IS NULL")
   Optional<User> findActiveByUsername(@Param("username") String username);

@@ -39,9 +39,9 @@ public class SecurityConfig {
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers("/")
             .permitAll()
-            .requestMatchers("/v1/auth/client/**")
-            .hasAnyRole("USER")
-            .requestMatchers("/v1/auth/admin/**")
+            .requestMatchers("/auth/client/**")
+            .hasAnyRole("SALES", "MANAGER", "CUSTOMER", "MARKETING", "SUPPORT", "FINANCE", "USER")
+            .requestMatchers("/auth/admin/**")
             .hasAnyRole("ADMIN", "SUPER_ADMIN")
             .anyRequest()
             .authenticated())

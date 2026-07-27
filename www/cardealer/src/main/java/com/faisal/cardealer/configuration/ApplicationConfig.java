@@ -21,7 +21,7 @@ public class ApplicationConfig {
 
   @Bean
   public UserDetailsService userDetailsService() {
-    return email -> userRepository.findByActiveEmail(email)
+    return email -> userRepository.findActiveByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("User not found."));
   }
 
